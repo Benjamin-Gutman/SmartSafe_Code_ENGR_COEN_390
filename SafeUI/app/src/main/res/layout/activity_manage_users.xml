@@ -12,7 +12,7 @@
         android:id="@+id/textManageUsersTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="MANAGE USERS mlep"
+        android:text="MANAGE USERS"
         android:textSize="26sp"
         android:textStyle="bold"
         android:textColor="#202020"
