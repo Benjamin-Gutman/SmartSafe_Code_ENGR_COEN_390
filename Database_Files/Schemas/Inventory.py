@@ -14,7 +14,7 @@ class InventoryUpdate(Inventory):
 class InventoryDelete(BaseModel):
     item_id: int
 
-class InventoryResponse(BaseModel):
+class InventoryResponse(Inventory):
     model_config = ConfigDict(from_attributes=True)
     item_id: int
 

@@ -1,0 +1,17 @@
+Commands are seperated by the comma charater (",")  
+
+First commands (action):
+- list: returns list of objects spesified
+#- modify: modify an object
+
+Second commands (table name):
+- inventory
+- inventory history
+- all
+
+Third Commands (specification):
+- id of item
+- all
+
+Fourth Commands (action):
+#- delete
