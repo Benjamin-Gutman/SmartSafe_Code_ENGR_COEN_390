@@ -1,11 +1,10 @@
-package com.example.safeui;
-
-import android.content.ClipData;
+package com.example.safeui.http_handler;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
+import java.util.ArrayList;
 import java.util.List;
 
 // Implements packages to store received JSON data into java objects. //
@@ -27,27 +26,32 @@ public class Models
     {
         public String status;
         public String command;
-        public JsonElement data;
+        public String message;
+        public JsonElement inventory;
+        public JsonElement history;
+        public Integer item_id;
 
+        public boolean isOk()
+        {
+            return "ok".equals(status);
+        }
 
-        // For single item responses
         public InventoryItem asInventoryItem()
         {
-            if(data == null || data.isJsonNull())
+            if (inventory == null || !inventory.isJsonObject())
             {
                 return null;
             }
-
-            return GSON.fromJson(data, InventoryItem.class) ;
+            return GSON.fromJson(inventory, InventoryItem.class);
         }
 
-        // For multiple item responses
         public List<InventoryItem> asInventoryItems()
         {
-            if (data == null || data.isJsonNull()) {
-                return new java.util.ArrayList<>();
+            if (inventory == null || !inventory.isJsonArray())
+            {
+                return new ArrayList<>();
             }
-            return GSON.fromJson(data, new TypeToken<List<InventoryItem>>() {}.getType());
+            return GSON.fromJson(inventory, new TypeToken<List<InventoryItem>>(){}.getType());
         }
     }
 }

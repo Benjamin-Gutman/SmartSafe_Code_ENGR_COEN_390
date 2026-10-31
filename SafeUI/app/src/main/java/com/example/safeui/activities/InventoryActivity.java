@@ -1,4 +1,4 @@
-package com.example.safeui;
+package com.example.safeui.activities;
 
 import android.app.AlertDialog;
 import android.database.Cursor;
@@ -13,8 +13,15 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-public class InventoryActivity extends AppCompatActivity {
+import com.example.safeui.DatabaseHelper;
+import com.example.safeui.R;
+import com.example.safeui.http_handler.DataSync;
+import com.example.safeui.http_handler.InventoryStore;
+import com.example.safeui.http_handler.Models;
 
+public class InventoryActivity extends AppCompatActivity implements DataSync.Listener
+{
+    private DataSync sync;
     private DatabaseHelper databaseHelper;
     private String username;
     private LinearLayout layoutInventoryItems;
@@ -36,6 +43,8 @@ public class InventoryActivity extends AppCompatActivity {
             return;
         }
 
+        sync = new DataSync(this, new InventoryStore(databaseHelper));
+
         layoutInventoryItems = findViewById(R.id.layoutInventoryItems);
         buttonAddItem = findViewById(R.id.buttonAddItem);
         buttonBackHome = findViewById(R.id.buttonBackHome);
@@ -45,6 +54,7 @@ public class InventoryActivity extends AppCompatActivity {
         buttonBackHome.setOnClickListener(v -> finish());
 
         loadInventory();
+        sync.refreshAll();
     }
 
     @Override
@@ -54,6 +64,16 @@ public class InventoryActivity extends AppCompatActivity {
         if (layoutInventoryItems != null && databaseHelper != null) {
             loadInventory();
         }
+    }
+
+    @Override public void onReply(Models.Reply reply)
+    {
+        loadInventory();
+    }
+
+    @Override public void onError(String message)
+    {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
     private void loadInventory() {
@@ -74,8 +94,8 @@ public class InventoryActivity extends AppCompatActivity {
                 return;
             }
 
-            int idColumn = cursor.getColumnIndexOrThrow("id");
-            int nameColumn = cursor.getColumnIndexOrThrow("name");
+            int idColumn = cursor.getColumnIndexOrThrow("item_id");
+            int nameColumn = cursor.getColumnIndexOrThrow("item_name");
             int descriptionColumn = cursor.getColumnIndexOrThrow("description");
             int quantityColumn = cursor.getColumnIndexOrThrow("quantity");
 
@@ -219,30 +239,9 @@ public class InventoryActivity extends AppCompatActivity {
                                 return;
                             }
 
-                            boolean success =
-                                    databaseHelper.addInventoryItem(
-                                            name,
-                                            description,
-                                            quantity,
-                                            username
-                                    );
+                            sync.create(name, quantity);
+                            dialog.dismiss();
 
-                            if (success) {
-                                Toast.makeText(
-                                        this,
-                                        "Inventory updated.",
-                                        Toast.LENGTH_SHORT
-                                ).show();
-
-                                dialog.dismiss();
-                                loadInventory();
-                            } else {
-                                Toast.makeText(
-                                        this,
-                                        "Could not add the item. Check the item details.",
-                                        Toast.LENGTH_LONG
-                                ).show();
-                            }
                         })
         );
 
@@ -308,29 +307,9 @@ public class InventoryActivity extends AppCompatActivity {
                                 return;
                             }
 
-                            boolean success =
-                                    databaseHelper.removeInventoryItem(
-                                            itemId,
-                                            quantity,
-                                            username
-                                    );
+                            sync.decrement(itemId, quantity);
+                            dialog.dismiss();
 
-                            if (success) {
-                                Toast.makeText(
-                                        this,
-                                        "Inventory updated.",
-                                        Toast.LENGTH_SHORT
-                                ).show();
-
-                                dialog.dismiss();
-                                loadInventory();
-                            } else {
-                                Toast.makeText(
-                                        this,
-                                        "Could not remove the quantity. Refresh and try again.",
-                                        Toast.LENGTH_LONG
-                                ).show();
-                            }
                         })
         );
 

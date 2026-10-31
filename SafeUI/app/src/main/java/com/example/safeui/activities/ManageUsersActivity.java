@@ -1,4 +1,4 @@
-package com.example.safeui;
+package com.example.safeui.activities;
 
 import android.database.Cursor;
 import android.os.Bundle;
@@ -10,6 +10,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.safeui.DatabaseHelper;
+import com.example.safeui.R;
 
 public class ManageUsersActivity extends AppCompatActivity {
     private DatabaseHelper databaseHelper;

@@ -16,7 +16,7 @@ import java.util.Locale;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "SafeInventory.db";
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
 
     private static final String USERS_TABLE = "users";
 
@@ -39,8 +39,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         db.execSQL(
                 "CREATE TABLE inventory (" +
-                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        "name TEXT NOT NULL COLLATE NOCASE UNIQUE, " +
+                        "item_id INTEGER PRIMARY KEY, " +
+                        "item_name TEXT NOT NULL COLLATE NOCASE UNIQUE, " +
                         "description TEXT NOT NULL DEFAULT '', " +
                         "quantity INTEGER NOT NULL DEFAULT 0 CHECK(quantity >= 0))"
         );
@@ -89,6 +89,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             "action TEXT NOT NULL, " +
                             "quantity_change INTEGER NOT NULL, " +
                             "event_time TEXT NOT NULL)"
+            );
+        }
+
+        if (oldVersion < 4) {
+            db.execSQL("DROP TABLE IF EXISTS inventory");
+            db.execSQL(
+                    "CREATE TABLE inventory (" +
+                            "item_id INTEGER PRIMARY KEY, " +
+                            "item_name TEXT NOT NULL COLLATE NOCASE UNIQUE, " +
+                            "description TEXT NOT NULL DEFAULT '', " +
+                            "quantity INTEGER NOT NULL DEFAULT 0 CHECK(quantity >= 0))"
             );
         }
     }
@@ -280,195 +291,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return db.query(
                 "inventory",
-                new String[]{"id", "name", "description", "quantity"},
+                new String[]{"item_id", "item_name", "description", "quantity"},
                 null, null, null, null,
-                "name COLLATE NOCASE ASC"
+                "item_name COLLATE NOCASE ASC"
         );
     }
-
-    public boolean addInventoryItem(
-            String name,
-            String description,
-            int quantity,
-            String username) {
-
-        name = name.trim();
-        description = description.trim();
-
-        if (name.isEmpty() || quantity <= 0 ||
-                username == null || username.trim().isEmpty()) {
-            return false;
-        }
-
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-
-        try {
-            Cursor cursor = db.query(
-                    "inventory",
-                    new String[]{"id", "quantity"},
-                    "name = ?",
-                    new String[]{name},
-                    null, null, null
-            );
-
-            long itemId;
-            String action;
-
-            try {
-                if (cursor.moveToFirst()) {
-                    itemId = cursor.getLong(0);
-                    int oldQuantity = cursor.getInt(1);
-
-                    if (oldQuantity > Integer.MAX_VALUE - quantity) {
-                        return false;
-                    }
-
-                    ContentValues update = new ContentValues();
-                    update.put("quantity", oldQuantity + quantity);
-
-                    // Update the description if a new one was supplied.
-                    if (!description.isEmpty()) {
-                        update.put("description", description);
-                    }
-
-                    db.update(
-                            "inventory",
-                            update,
-                            "id = ?",
-                            new String[]{String.valueOf(itemId)}
-                    );
-
-                    action = "ADDED";
-                } else {
-                    ContentValues values = new ContentValues();
-                    values.put("name", name);
-                    values.put("description", description);
-                    values.put("quantity", quantity);
-
-                    itemId = db.insert("inventory", null, values);
-
-                    if (itemId == -1) {
-                        return false;
-                    }
-
-                    action = "ADDED";
-                }
-            } finally {
-                cursor.close();
-            }
-
-            recordInventoryChange(
-                    db, itemId, name, username,
-                    action, quantity
-            );
-
-            db.setTransactionSuccessful();
-            return true;
-
-        } catch (Exception e) {
-            return false;
-        } finally {
-            db.endTransaction();
-        }
-    }
-
-    public boolean removeInventoryItem(
-            long itemId, int quantity, String username) {
-
-        if (quantity <= 0 ||
-                username == null || username.trim().isEmpty()) {
-            return false;
-        }
-
-        SQLiteDatabase db = getWritableDatabase();
-        db.beginTransaction();
-
-        try {
-            Cursor cursor = db.query(
-                    "inventory",
-                    new String[]{"name", "quantity"},
-                    "id = ?",
-                    new String[]{String.valueOf(itemId)},
-                    null, null, null
-            );
-
-            String itemName;
-            int oldQuantity;
-
-            try {
-                if (!cursor.moveToFirst()) {
-                    return false;
-                }
-
-                itemName = cursor.getString(0);
-                oldQuantity = cursor.getInt(1);
-            } finally {
-                cursor.close();
-            }
-
-            if (quantity > oldQuantity) {
-                return false;
-            }
-
-            ContentValues values = new ContentValues();
-            values.put("quantity", oldQuantity - quantity);
-
-            int rowsUpdated = db.update(
-                    "inventory",
-                    values,
-                    "id = ? AND quantity >= ?",
-                    new String[]{
-                            String.valueOf(itemId),
-                            String.valueOf(quantity)
-                    }
-            );
-
-            if (rowsUpdated != 1) {
-                return false;
-            }
-
-            recordInventoryChange(
-                    db, itemId, itemName, username,
-                    "REMOVED", -quantity
-            );
-
-            db.setTransactionSuccessful();
-            return true;
-
-        } catch (Exception e) {
-            return false;
-        } finally {
-            db.endTransaction();
-        }
-    }
-
-    private void recordInventoryChange(
-            SQLiteDatabase db,
-            long itemId,
-            String itemName,
-            String username,
-            String action,
-            int quantityChange) {
-
-        ContentValues history = new ContentValues();
-        history.put("item_id", itemId);
-        history.put("item_name", itemName);
-        history.put("username", username);
-        history.put("action", action);
-        history.put("quantity_change", quantityChange);
-        history.put("event_time", getCurrentTimestamp());
-
-        long result = db.insert(
-                "inventory_history", null, history
-        );
-
-        if (result == -1) {
-            throw new IllegalStateException(
-                    "Could not record inventory history."
-            );
-        }
-    }
-
-
 }
