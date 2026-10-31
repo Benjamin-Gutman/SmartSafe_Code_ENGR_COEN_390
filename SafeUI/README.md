@@ -32,7 +32,7 @@ private static final String URL = "ws://127.0.0.1:8765";
 
 ## 3. Run
 
-Run the app from Android Studio and open the inventory screen. To confirm changes reach the server, run `python check_db.py` in `Database_Files`.
+Run the app from Android Studio and open the inventory screen. To confirm changes reach the server, see testing scripts in database folder (if they exist)
 
 ## Troubleshooting
 
