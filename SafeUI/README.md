@@ -1,5 +1,7 @@
 # SafeUI: Emulator Setup
 
+These instructions only apply if you are running the server on the same machine as the Android Studio emulator.
+
 ## 1. Start the server (PC)
 
 ```
