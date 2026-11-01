@@ -18,7 +18,7 @@ public class ClientSocket
 {
     private ClientSocket() {}
 
-    private static final String URL = "ws://127.0.0.1:8765";
+    private static final String URL = "ws://100.93.188.101:8765";
 
     public interface ReplyCallback
     {
