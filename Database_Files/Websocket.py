@@ -200,6 +200,6 @@ async def main(host: str, port: int) -> None:
         await asyncio.Future()  # run forever
 
 try:
-    asyncio.run(main("localhost", 8765))
+    asyncio.run(main("0.0.0.0", 8765))
 except KeyboardInterrupt:
     print("Server stopped")
