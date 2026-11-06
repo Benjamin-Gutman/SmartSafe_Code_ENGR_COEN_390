@@ -13,12 +13,16 @@ import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 
+// DO NOT TOUCH UNLESS THERE'S A NETWORK ISSUE OR CHANGE //
 
 public class ClientSocket
 {
     private ClientSocket() {}
 
     private static final String URL = "ws://100.93.188.101:8765";
+
+    // TAILSCALE IP
+    // private static final String URL = "ws://100.93.188.101:8765";
 
     public interface ReplyCallback
     {
