@@ -26,7 +26,7 @@ public class Models
     {
         public String status;
         public String command;
-        public String message;
+        public String message; // For error messages
         public JsonElement inventory;
         public JsonElement history;
         public Integer item_id;
@@ -36,6 +36,7 @@ public class Models
             return "ok".equals(status);
         }
 
+        // For when inventory JSON contains only one item
         public InventoryItem asInventoryItem()
         {
             if (inventory == null || !inventory.isJsonObject())
@@ -45,6 +46,7 @@ public class Models
             return GSON.fromJson(inventory, InventoryItem.class);
         }
 
+        // For inventory JSON containing list of items
         public List<InventoryItem> asInventoryItems()
         {
             if (inventory == null || !inventory.isJsonArray())
