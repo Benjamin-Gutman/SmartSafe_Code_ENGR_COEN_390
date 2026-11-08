@@ -206,7 +206,6 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             update = db_helper.update_user_privileges(
                             user_id=args.user_id, isAdmin = args.idAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrilige
                         )
-   
             if user is None:
                 return error(f"Item {args.user_id} not found", cmd)
             return ok(cmd, message="User Permission updated", user=user_to_dict(user))
@@ -220,14 +219,14 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
                 return error(f"User {args.user_id} not found", cmd)
             return ok(cmd, message="User Password  updated", user=user_to_dict(user))
 
-
-
         if cmd == "deleteUser":
             deleted = db_helper.delete_inventoryuser(db, args.user_id)
             if not deleted:
                 return error(f"User {args.user_id} not found", cmd)
             # Nothing to return for a deleted user, so send a confirmation.
             return ok(cmd, message=f"User {args.user_id} deleted", user_id=args.user_id)
+
+        
 
         # Access history 
 
@@ -268,8 +267,12 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             entries = db_helper.get_access_history_by_user(db, args.user_id)
             return ok(cmd, access_history = [access_history_to_dict(i) for i in entries])
 
+        
+
  
     return error(f"Unhandled command '{cmd}'", cmd)
+
+
  
  
 def handle_message(raw: str, parser: SocketArgumentParser) -> dict:
