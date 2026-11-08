@@ -12,6 +12,11 @@ import DatabaseHelper as db_helper
 from Database import engine
 from Schemas.Inventory import InventoryCreate, InventoryResponse, InventoryUpdate
 from Schemas.Inventory_History import InventoryHistoryResponse
+
+from Models.User import User
+from Schemas.Users import UserUpdate, UserResponse, UserCreate
+
+from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, AccessHistoryResponse, AccessHistoryUpdate
  
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
@@ -86,6 +91,13 @@ def item_to_dict(item) -> dict:
  
 def history_to_dict(entry) -> dict:
     return InventoryHistoryResponse.model_validate(entry).model_dump(mode="json")
+
+def user_to_dict(user) -> dict:
+    return UserResponse.model_validate(user).model_dump(mode = "json")
+
+
+def access_history_to_dict(access) -> dict:
+    return AccessHistoryResponse.model_validate(access).model_dump(mode = "json")
  
  
 def ok(command: str, **payload) -> dict:
@@ -113,6 +125,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
         return ok(cmd, message=parser.format_help())
  
     with session_scope() as db:
+        # Inventory Database, one  one word cmd will default to Inventory
         if cmd == "create":
             item = db_helper.create_inventory(
                 db, InventoryCreate(item_name=args.name, quantity=args.quantity)
@@ -155,6 +168,106 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
         if cmd == "history":
             entries = db_helper.get_inventory_history(db, args.item_id)
             return ok(cmd, history=[history_to_dict(e) for e in entries])
+
+        # User database commands (will always have keyword User)
+        if cmd == "createUser":
+            #will automatically set user as admin if first one.
+            if len(db_helper.get_all_users) == 0: 
+                user = db_helper.create_user(
+                    db, UserCreate(username=args.username, email=args.email,isAdmin= True,hasOpenDoorPrivilege= True)
+                )
+            else:
+                user = db_helper.create_user(
+                    db, UserCreate(username=args.username, email=args.email,isAdmin = False ,hasOpenDoorPrivilege= False)
+                )
+            return ok(cmd, message="User created", user=user_to_dict(user))
+        
+    
+        if cmd == "getUser":
+            user = db_helper.get_user(db, args.user_id)
+            if user is None:
+                return error(f"User {args.user_id} not found", cmd)
+            return ok(cmd, user=user_to_dict(user))
+    
+        if cmd == "listUser":
+            users = db_helper.get_all_users(db)
+            return ok(cmd, users=[users_to_dict(i) for i in users])
+    
+        if cmd == "updateUser":
+            update = UserUpdate(
+                username=args.username, email=args.email,  isAdmin=args.isAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrivilege,password=args.password)
+            user = db_helper.update_user(db, args.user_id, update)
+            if user is None:
+                return error(f"User {args.user_id} not found", cmd)
+            return ok(cmd, message="User updated", user=user_to_dict(user))
+
+
+        if cmd == "updateUserPrivileges" :
+            update = db_helper.update_user_privileges(
+                            user_id=args.user_id, isAdmin = args.idAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrilige
+                        )
+   
+            if user is None:
+                return error(f"Item {args.user_id} not found", cmd)
+            return ok(cmd, message="User Permission updated", user=user_to_dict(user))
+            
+        if cmd == "updateUserPassword" :
+            update = db_helper.update_user_password(
+                user_id=args.user_id, new_password= args.new_password
+            )
+            
+            if user is None:
+                return error(f"User {args.user_id} not found", cmd)
+            return ok(cmd, message="User Password  updated", user=user_to_dict(user))
+
+
+
+        if cmd == "deleteUser":
+            deleted = db_helper.delete_inventoryuser(db, args.user_id)
+            if not deleted:
+                return error(f"User {args.user_id} not found", cmd)
+            # Nothing to return for a deleted user, so send a confirmation.
+            return ok(cmd, message=f"User {args.user_id} deleted", user_id=args.user_id)
+
+        # Access history 
+
+        if cmd == "createAccessHistory":
+            history_data = AccessHistoryCreate(
+                user_id = args.user_id, changes_made = args.changes_made, timestamp = args.timestamp
+            )
+            entry = db_helper.create_access_history(db, history_data)
+            return ok(cmd, message="Access history created", access_history=access_history_to_dict(entry))
+        
+    
+        if cmd == "getAccessHistory":
+                entry = db_helper.get_access_history(db, args.access_id)
+                if entry is None:
+                    return error(f"Access history {args.access_id} not found", cmd)  
+                return ok(cmd, access_history=access_history_to_dict(entry))   
+        
+        if cmd == "listAccessHistory":
+                entries = db_helper.get_all_access_history(db)
+                return ok(cmd, access_history=[access_history_to_dict(i) for i in entries])  
+
+        if cmd == "updateAccessHistory":
+            update = AccessHistoryUpdate( user_id = args.user_id, changes_made=args.changes_made, timestamp=args.timestamp)
+            entry = db_helper.update_access_history(db, args.access_id, update)
+            if entry is None:
+                return error(f"Entry {args.entry_id} not found", cmd)
+            return ok(cmd, message="Access history  updated", access_history=access_history_to_dict(entry))
+
+        if cmd == "deleteAccessHistory":
+            deleted = AccessHistoryDelete(db, args.access_id)
+            if not deleted : 
+                return error(f"Access History {args.access_id} not found", cmd)
+            # Nothing to return for a deleted user, so send a confirmation.
+            return ok(cmd, message=f"Access History {args.access_id} deleted", access_id=args.access_id)
+              
+
+        if cmd == "getAllAccessHistoryForUser" : 
+            entries = db_helper.get_access_history_by_user(db, args.user_id)
+            return ok(cmd, access_history = [access_history_to_dict(i) for i in entries])
+
  
     return error(f"Unhandled command '{cmd}'", cmd)
  
