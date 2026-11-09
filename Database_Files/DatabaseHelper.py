@@ -195,6 +195,16 @@ def delete_user(db: Session, user_id: int) -> bool:
     db.commit()
     return True
 
+def verify_user(db:Session, user_id: int, password : str) -> bool:
+    db_user = db.get(User, user_id)
+    if db_user is None:
+        return False
+    if db_user.password == password:
+        return True
+    else :
+        return False
+    
+
 def create_access_history(db: Session, access_history: AccessHistoryCreate) -> AccessHistory:
     db_access_history = AccessHistory(
         user_id=access_history.user_id,
@@ -229,4 +239,6 @@ def update_access_history(db: Session, access_id: int, access_history: AccessHis
 def get_access_history_by_user(db: Session, user_id: int) -> list[AccessHistory]:
     statement = select(AccessHistory).where(AccessHistory.user_id == user_id).order_by(AccessHistory.timestamp)
     return list(db.scalars(statement))
+
+
 

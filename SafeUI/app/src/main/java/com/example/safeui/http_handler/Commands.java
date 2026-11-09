@@ -84,9 +84,9 @@ public class Commands
         return "listUsers";
     }
 
-    public static String updateUser(int user_id, String username, String email, boolean isAdmin, boolean hasOpenDoorprivilege, String password)
+    public static String updateUserInfo(int user_id, String username, String email, boolean isAdmin, boolean hasOpenDoorprivilege, String password)
     {
-        return "updateUser --userID "+ user_id+ " --username " + username + " --email " + email + " --isAdmin " +isAdmin + " --hasOpenDoorprivilege " + hasOpenDoorprivilege + " --password " + password;
+        return "updateUserInfo --userID "+ user_id+ " --username " + username + " --email " + email + " --isAdmin " +isAdmin + " --hasOpenDoorprivilege " + hasOpenDoorprivilege + " --password " +password;
     }
 
     public static String updatePassword(int user_id, String new_password)
@@ -105,9 +105,9 @@ public class Commands
     }
 
     //Not exactly sure how the return process will work for this to verify login. 
-    public static String loginUser( int user_id, String username, String password)
+    public static String verifyUser( int user_id, String password)
     {
-        return "loginUser --userID " + user_id + " --username " + username + " --password " + password;
+        return "verifyUser --userID " + user_id + " --username " + username + " --password " + password;
     }
 
     // User Access History related commands
@@ -134,7 +134,12 @@ public class Commands
 
     public static String getAccessHistoryByUser(int user_id)
     {
-        return "getAccessHistoryByUSer --userID " + user_id;
+        return "getAccessHistoryByUser --userID " + user_id;
+    }
+
+    public static String deleteAccessHistory(int access_id)
+    {
+        return "deleteAccessHistory --userID " + access_id;
     }
 
 
