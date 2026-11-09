@@ -1,4 +1,4 @@
-package com.example.safeui;
+package com.example.safeui.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -7,6 +7,9 @@ import android.widget.Toast;
 import android.app.AlertDialog;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.safeui.DatabaseHelper;
+import com.example.safeui.R;
 
 public class MainActivity extends AppCompatActivity {
     private String username;
