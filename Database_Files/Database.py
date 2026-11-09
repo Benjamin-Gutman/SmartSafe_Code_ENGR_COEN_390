@@ -4,7 +4,7 @@ import os
 
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "SQLALCHEMY_DATABASE_URL",
-    "SmartSafe_Code_ENGR_COEN_390/test.db", #random ass database value, database not created yet
+    "sqlite:///Tables.db", #random ass database value, database not created yet
 )
 
 engine = create_engine(

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List
-from Database_Files.Schemas.Inventory_History import InventoryHistory
+from .Inventory_History import InventoryHistory
 
 class AccessHistory(BaseModel):
     user_id: int

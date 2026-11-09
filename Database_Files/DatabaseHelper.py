@@ -7,7 +7,7 @@ from Models.Inventory import Inventory
 from Models.Inventory_History import InventoryHistory
 from Schemas.Inventory import InventoryCreate, InventoryUpdate
 from Schemas.Users import User, UserCreate, UserUpdate, UserResponse
-from Schemas.Access_History import AccessHistory, AccessHistoryCreate, AccessHistoryUpdate, AccessHistoryDelete, AccessHistoryResponse
+# from Schemas.Access_History import AccessHistory, AccessHistoryCreate, AccessHistoryUpdate, AccessHistoryDelete, AccessHistoryResponse
 
 
 
@@ -195,38 +195,38 @@ def delete_user(db: Session, user_id: int) -> bool:
     db.commit()
     return True
 
-def create_access_history(db: Session, access_history: AccessHistoryCreate) -> AccessHistory:
-    db_access_history = AccessHistory(
-        user_id=access_history.user_id,
-        changes_made=access_history.changes_made,
-        timestamp=access_history.timestamp,
-    )
-    db.add(db_access_history)
-    db.commit()
-    db.refresh(db_access_history)
-    return db_access_history
+# def create_access_history(db: Session, access_history: AccessHistoryCreate) -> AccessHistory:
+#     db_access_history = AccessHistory(
+#         user_id=access_history.user_id,
+#         changes_made=access_history.changes_made,
+#         timestamp=access_history.timestamp,
+#     )
+#     db.add(db_access_history)
+#     db.commit()
+#     db.refresh(db_access_history)
+#     return db_access_history
 
-def get_access_history(db: Session, access_id: int) -> AccessHistory | None:
-    return db.get(AccessHistory, access_id)
+# def get_access_history(db: Session, access_id: int) -> AccessHistory | None:
+#     return db.get(AccessHistory, access_id)
 
-def get_all_access_history(db: Session) -> list[AccessHistory]:
-    statement = select(AccessHistory).order_by(AccessHistory.timestamp)
-    return list(db.scalars(statement))
+# def get_all_access_history(db: Session) -> list[AccessHistory]:
+#     statement = select(AccessHistory).order_by(AccessHistory.timestamp)
+#     return list(db.scalars(statement))
 
-def update_access_history(db: Session, access_id: int, access_history: AccessHistoryUpdate) -> AccessHistory | None:
-    db_access_history = db.get(AccessHistory, access_id)
-    if db_access_history is None:
-        return None
+# def update_access_history(db: Session, access_id: int, access_history: AccessHistoryUpdate) -> AccessHistory | None:
+#     db_access_history = db.get(AccessHistory, access_id)
+#     if db_access_history is None:
+#         return None
 
-    db_access_history.user_id = access_history.user_id
-    db_access_history.changes_made = access_history.changes_made
-    db_access_history.timestamp = access_history.timestamp
+#     db_access_history.user_id = access_history.user_id
+#     db_access_history.changes_made = access_history.changes_made
+#     db_access_history.timestamp = access_history.timestamp
 
-    db.commit()
-    db.refresh(db_access_history)
-    return db_access_history
+#     db.commit()
+#     db.refresh(db_access_history)
+#     return db_access_history
 
-def get_access_history_by_user(db: Session, user_id: int) -> list[AccessHistory]:
-    statement = select(AccessHistory).where(AccessHistory.user_id == user_id).order_by(AccessHistory.timestamp)
-    return list(db.scalars(statement))
+# def get_access_history_by_user(db: Session, user_id: int) -> list[AccessHistory]:
+#     statement = select(AccessHistory).where(AccessHistory.user_id == user_id).order_by(AccessHistory.timestamp)
+#     return list(db.scalars(statement))
 
