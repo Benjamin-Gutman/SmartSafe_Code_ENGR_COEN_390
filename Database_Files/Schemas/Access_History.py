@@ -1,11 +1,10 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import List
 from .Inventory_History import InventoryHistory
 
 class AccessHistory(BaseModel):
     user_id: int
-    changes_made: List[InventoryHistory]
+    changes_made: list[InventoryHistory]
     timestamp: datetime
 
 class AccessHistoryCreate(AccessHistory):
@@ -16,7 +15,7 @@ class AccessHistoryUpdate(AccessHistory):
 
 class AccessHistoryDelete(AccessHistory):
     access_id: int
-    
+
 
 class AccessHistoryResponse(AccessHistory):
     model_config = ConfigDict(from_attributes=True)

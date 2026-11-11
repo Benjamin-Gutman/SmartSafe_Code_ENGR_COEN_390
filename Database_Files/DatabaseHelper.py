@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from Database import Base, engine
 from Models.Inventory import Inventory
 from Models.Inventory_History import InventoryHistory
+from Models.User import User
 from Schemas.Inventory import InventoryCreate, InventoryUpdate
 from Schemas.Users import User, UserCreate, UserUpdate, UserResponse
 # from Schemas.Access_History import AccessHistory, AccessHistoryCreate, AccessHistoryUpdate, AccessHistoryDelete, AccessHistoryResponse
@@ -129,6 +130,7 @@ def create_user(db: Session, user: UserCreate) -> User:
     db_user = User(
         username=user.username,
         email=user.email,
+        password = user.password,
         isAdmin=user.isAdmin,
         hasOpenDoorPrivilege=user.hasOpenDoorPrivilege,
     )
