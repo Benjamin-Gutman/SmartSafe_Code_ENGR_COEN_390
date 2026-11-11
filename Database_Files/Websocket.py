@@ -13,7 +13,6 @@ from Database import engine
 from Schemas.Inventory import InventoryCreate, InventoryResponse, InventoryUpdate
 from Schemas.Inventory_History import InventoryHistoryResponse
 
-from Models.User import User
 from Schemas.Users import UserUpdate, UserResponse, UserCreate
 
 from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, AccessHistoryResponse, AccessHistoryUpdate
@@ -99,9 +98,9 @@ def build_command_parser() -> SocketArgumentParser:
 
     p = sub.add_parser("updateUserInfo", help= "update a user's parameters(name, email)", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--name", required=True)
-    p.add_argument("--email") 
-    p.add_argument("--isAdmin", type=bool)
-    p.add_argument("--hasOpenDoorPrivileges",type=bool)
+    p.add_argument("--email",  required=True) 
+    p.add_argument("--isAdmin", type=bool, required=True)
+    p.add_argument("--hasOpenDoorPrivileges", type=bool, required=True)
     p.add_argument("--password")
 
     p = sub.add_parser("updatePassword", help= "update a user's password", formatter_class=argparse.RawTextHelpFormatter)
@@ -110,14 +109,14 @@ def build_command_parser() -> SocketArgumentParser:
 
     p = sub.add_parser("updateUserPrivileges", help= "update a user's priviledges(Admin rights, SafeDoor rights)", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--user_id", type=int, required=True)
-    p.add_argument("--isAdmin", type=bool)
-    p.add_argument("--hasOpenDoorPrivileges",type=bool)
+    p.add_argument("--isAdmin", type=bool, required=True)
+    p.add_argument("--hasOpenDoorPrivileges", type=bool)
 
     p = sub.add_parser("deleteUser", help= "Delete a user using their ID", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--user_id", type=int, required=True)
 
     p = sub.add_parser("verifyUser", help= "for verifying a user", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--user_id", type=int)
+    p.add_argument("--user_id", type=int, required=True)
     p.add_argument("--password", required=True)
 
     #User Access history part
@@ -239,7 +238,6 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
                 db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=args.isAdmin, hasOpenDoorPrivileges=args.hasOpenDoorPrivileges)
             )
             return ok(cmd, message="User created", user=user_to_dict(user))
-        
     
         if cmd == "getUserById":
             user = db_helper.get_user(db, args.user_id)
