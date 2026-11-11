@@ -12,6 +12,7 @@ import DatabaseHelper as db_helper
 from Database import engine
 from Schemas.Inventory import InventoryCreate, InventoryResponse, InventoryUpdate
 from Schemas.Inventory_History import InventoryHistoryResponse
+from Schemas.Users import UserCreate
  
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
@@ -74,7 +75,7 @@ def build_command_parser() -> SocketArgumentParser:
  
     p = sub.add_parser("history", help="show inventory history", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--item-id", type=int, default=None, help="filter by item id")
- 
+
     sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)
     return parser
  
