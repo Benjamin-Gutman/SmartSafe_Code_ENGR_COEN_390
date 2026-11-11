@@ -12,12 +12,12 @@ import DatabaseHelper as db_helper
 from Database import engine
 from Schemas.Inventory import InventoryCreate, InventoryResponse, InventoryUpdate
 from Schemas.Inventory_History import InventoryHistoryResponse
-
 from Schemas.Users import UserUpdate, UserResponse, UserCreate
-
 from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, AccessHistoryResponse, AccessHistoryUpdate
  
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+
+
 
 class CommandError(Exception):
    #Raised for bad commands or when argparse wants to exit.
@@ -116,7 +116,7 @@ def build_command_parser() -> SocketArgumentParser:
     p.add_argument("--user_id", type=int, required=True)
 
     p = sub.add_parser("verifyUser", help= "for verifying a user", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--user_id", type=int, required=True)
+    p.add_argument("--user_name", required=True)
     p.add_argument("--password", required=True)
 
     #User Access history part
@@ -141,6 +141,9 @@ def build_command_parser() -> SocketArgumentParser:
 
     p = sub.add_parser("getAccessHistoryByUser", help= "Retrieve access history for specific user", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--user_id", type=int, required=True)
+
+    #User Access history part
+    
 
     sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)
     return parser
@@ -288,16 +291,13 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             return ok(cmd, message=f"User {args.user_id} deleted", user_id=args.user_id)
 
         if cmd == "verifyUser":
-            verification = db_helper.verify_user(db, args.user_id, args.password)
+            verification = db_helper.verify_user(db, args.user_name, args.password)
             if verification is None:
                 return error(f"User {args.user_id} not found", cmd)
             if verification == True :
                 return ok(cmd, message=f"User {args.user_id} is verified with this Password", user_id=args.user_id)
             else : 
                 return ok(cmd, message=f"User {args.user_id} could not be verified with this Password", user_id=args.user_id)  
-
-
-
         
 
         # Access history 
@@ -339,13 +339,9 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             entries = db_helper.get_access_history_by_user(db, args.user_id)
             return ok(cmd, access_history = [access_history_to_dict(i) for i in entries])
 
-        
-
  
     return error(f"Unhandled command '{cmd}'", cmd)
 
-
- 
  
 def handle_message(raw: str, parser: SocketArgumentParser) -> dict:
     try:
