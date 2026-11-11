@@ -12,7 +12,10 @@ import DatabaseHelper as db_helper
 from Database import engine
 from Schemas.Inventory import InventoryCreate, InventoryResponse, InventoryUpdate
 from Schemas.Inventory_History import InventoryHistoryResponse
-from Schemas.Users import UserCreate
+
+from Schemas.Users import UserUpdate, UserResponse, UserCreate
+
+from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, AccessHistoryResponse, AccessHistoryUpdate
  
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
@@ -43,11 +46,12 @@ class SocketArgumentParser(argparse.ArgumentParser):
             text += message
         raise CommandError(text.strip(), is_help=(status == 0))
  
- 
+ # reads stuff from the Commands.java file in the android App.
 def build_command_parser() -> SocketArgumentParser:
     parser = SocketArgumentParser(prog="", description="Inventory websocket commands", formatter_class=argparse.RawTextHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
- 
+
+    #inventory related commands
     p = sub.add_parser("create", help="create a new inventory item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--name", required=True, help="item name")
     p.add_argument("--quantity", type=int, required=True, help="initial quantity (> 0)")
@@ -76,6 +80,68 @@ def build_command_parser() -> SocketArgumentParser:
     p = sub.add_parser("history", help="show inventory history", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--item-id", type=int, default=None, help="filter by item id")
 
+    #User table related commands
+    p = sub.add_parser("createUser", help= "create user", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--name", required=True)
+    p.add_argument("--email") 
+    p.add_argument("--password")
+    p.add_argument("--isAdmin", type=bool)
+    p.add_argument("--hasOpenDoorPrivileges",type=bool)
+
+    p = sub.add_parser("getUserByID", help= "get user using their ID", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("user_id", type=int, required=True)
+
+    p = sub.add_parser("getUserByUsername", help= "get user using their Username", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("username", required=True)
+
+    p = sub.add_parser("listUsers", help= "get list of users", formatter_class=argparse.RawTextHelpFormatter)
+
+    p = sub.add_parser("updateUserInfo", help= "update a user's parameters(name, email)", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--name", required=True)
+    p.add_argument("--email",  required=True) 
+    p.add_argument("--isAdmin", type=bool, required=True)
+    p.add_argument("--hasOpenDoorPrivileges", type=bool, required=True)
+    p.add_argument("--password")
+
+    p = sub.add_parser("updatePassword", help= "update a user's password", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--UserID", type=int, required=True)
+    p.add_argument("--newpassword", required = True)
+
+    p = sub.add_parser("updateUserPrivileges", help= "update a user's priviledges(Admin rights, SafeDoor rights)", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--user_id", type=int, required=True)
+    p.add_argument("--isAdmin", type=bool, required=True)
+    p.add_argument("--hasOpenDoorPrivileges", type=bool)
+
+    p = sub.add_parser("deleteUser", help= "Delete a user using their ID", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--user_id", type=int, required=True)
+
+    p = sub.add_parser("verifyUser", help= "for verifying a user", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--user_id", type=int, required=True)
+    p.add_argument("--password", required=True)
+
+    #User Access history part
+    p = sub.add_parser("createAccess", help= "Create an entry of Access", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--user_id", type=int, required=True)
+    p.add_argument("--changes_made" )
+    p.add_argument("--timestamp")
+
+    p = sub.add_parser("getAccessHistory", help= "Retrieve a specific Access entry", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--access_id", type=int, required=True)
+
+    p = sub.add_parser("getAccessList", help= "Retrieve Access List", formatter_class=argparse.RawTextHelpFormatter)
+
+    p = sub.add_parser("updateAccessHistory", help= "Update a specific Access entry", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--access_id", type=int, required=True)
+    p.add_argument("--user_id" )
+    p.add_argument("--changes_made" )
+    p.add_argument("--timestamp")
+
+    p = sub.add_parser("deleteAccessHistory", help= "Deletes a specific Access entry", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--access_id", type=int, required=True)
+
+    p = sub.add_parser("getAccessHistoryByUser", help= "Retrieve access history for specific user", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--user_id", type=int, required=True)
+
     sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)
     return parser
  
@@ -87,6 +153,13 @@ def item_to_dict(item) -> dict:
  
 def history_to_dict(entry) -> dict:
     return InventoryHistoryResponse.model_validate(entry).model_dump(mode="json")
+
+def user_to_dict(user) -> dict:
+    return UserResponse.model_validate(user).model_dump(mode = "json")
+
+
+def access_history_to_dict(access) -> dict:
+    return AccessHistoryResponse.model_validate(access).model_dump(mode = "json")
  
  
 def ok(command: str, **payload) -> dict:
@@ -114,6 +187,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
         return ok(cmd, message=parser.format_help())
  
     with session_scope() as db:
+        # Inventory Database, one  one word cmd will default to Inventory
         if cmd == "create":
             item = db_helper.create_inventory(
                 db, InventoryCreate(item_name=args.name, quantity=args.quantity)
@@ -156,8 +230,121 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
         if cmd == "history":
             entries = db_helper.get_inventory_history(db, args.item_id)
             return ok(cmd, history=[history_to_dict(e) for e in entries])
+
+        # User database commands (will always have keyword User)
+        if cmd == "createUser":
+            #will automatically set user as admin if first one.
+            user = db_helper.create_user(
+                db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=args.isAdmin, hasOpenDoorPrivileges=args.hasOpenDoorPrivileges)
+            )
+            return ok(cmd, message="User created", user=user_to_dict(user))
+    
+        if cmd == "getUserById":
+            user = db_helper.get_user(db, args.user_id)
+            if user is None:
+                return error(f"User {args.user_id} not found", cmd)
+            return ok(cmd, user=user_to_dict(user))
+
+        if cmd == "getUserByUsername":
+            user = db_helper.get_user(db, args.username)
+            if user is None:
+                return error(f"User {args.user_id} not found", cmd)
+            return ok(cmd, user=user_to_dict(user))
+    
+        if cmd == "listUsers":
+            users = db_helper.get_all_users(db)
+            return ok(cmd, users=[users_to_dict(i) for i in users])
+    
+        if cmd == "updateUserInfo":
+            update = UserUpdate(
+                username=args.username, email=args.email)
+            user = db_helper.update_user(db, args.user_id, update)
+            if user is None:
+                return error(f"User {args.user_id} not found", cmd)
+            return ok(cmd, message="User updated", user=user_to_dict(user))
+
+        if cmd == "updateUserPrivileges":
+            update = UserUpdate(
+                user_id=args.user_id, isAdmin=args.isAdmin, hasOpenDoorPrivileges=args.hasOpenDoorPrivileges)
+            user = db_helper.update_user_privileges(db, args.user_id, update)
+            if user is None:
+                return error(f"User {args.user_id} not found", cmd)
+            return ok(cmd, message="User updated", user=user_to_dict(user))
+
+        if cmd == "updatePassword" :
+            update = db_helper.update_user_password(
+                user_id=args.user_id, new_password= args.new_password
+            )
+            
+            if user is None:
+                return error(f"User {args.user_id} not found", cmd)
+            return ok(cmd, message="User Password  updated", user=user_to_dict(user))
+
+        if cmd == "deleteUser":
+            deleted = db_helper.delete_inventoryuser(db, args.user_id)
+            if not deleted:
+                return error(f"User {args.user_id} not found", cmd)
+            # Nothing to return for a deleted user, so send a confirmation.
+            return ok(cmd, message=f"User {args.user_id} deleted", user_id=args.user_id)
+
+        if cmd == "verifyUser":
+            verification = db_helper.verify_user(db, args.user_id, args.password)
+            if verification is None:
+                return error(f"User {args.user_id} not found", cmd)
+            if verification == True :
+                return ok(cmd, message=f"User {args.user_id} is verified with this Password", user_id=args.user_id)
+            else : 
+                return ok(cmd, message=f"User {args.user_id} could not be verified with this Password", user_id=args.user_id)  
+
+
+
+        
+
+        # Access history 
+
+        if cmd == "createAccess":
+            history_data = AccessHistoryCreate(
+                user_id = args.user_id, changes_made = args.changes_made, timestamp = args.timestamp
+            )
+            entry = db_helper.create_access_history(db, history_data)
+            return ok(cmd, message="Access history created", access_history=access_history_to_dict(entry))
+        
+    
+        if cmd == "getAccessHistory":
+                entry = db_helper.get_access_history(db, args.access_id)
+                if entry is None:
+                    return error(f"Access history {args.access_id} not found", cmd)  
+                return ok(cmd, access_history=access_history_to_dict(entry))   
+        
+        if cmd == "getAccessList":
+                entries = db_helper.get_all_access_history(db)
+                return ok(cmd, access_history=[access_history_to_dict(i) for i in entries])  
+
+        if cmd == "updateAccessHistory":
+            update = AccessHistoryUpdate( user_id = args.user_id, changes_made=args.changes_made, timestamp=args.timestamp)
+            entry = db_helper.update_access_history(db, args.access_id, update)
+            if entry is None:
+                return error(f"Entry {args.entry_id} not found", cmd)
+            return ok(cmd, message="Access history  updated", access_history=access_history_to_dict(entry))
+
+        if cmd == "deleteAccessHistory":
+            deleted = AccessHistoryDelete(db, args.access_id)
+            if not deleted : 
+                return error(f"Access History {args.access_id} not found", cmd)
+            # Nothing to return for a deleted user, so send a confirmation.
+            return ok(cmd, message=f"Access History {args.access_id} deleted", access_id=args.access_id)
+              
+
+        if cmd == "getAccessHistoryByUser" : 
+            entries = db_helper.get_access_history_by_user(db, args.user_id)
+            return ok(cmd, access_history = [access_history_to_dict(i) for i in entries])
+
+        
+
  
     return error(f"Unhandled command '{cmd}'", cmd)
+
+
  
  
 def handle_message(raw: str, parser: SocketArgumentParser) -> dict:
