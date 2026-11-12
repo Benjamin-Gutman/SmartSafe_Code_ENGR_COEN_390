@@ -19,8 +19,7 @@ import com.example.safeui.http_handler.DataSync;
 import com.example.safeui.http_handler.InventoryStore;
 import com.example.safeui.http_handler.Models;
 
-public class InventoryActivity extends AppCompatActivity implements DataSync.Listener
-{
+public class InventoryActivity extends AppCompatActivity implements DataSync.Listener {
     private DataSync sync;
     private DatabaseHelper databaseHelper;
     private String username;
@@ -66,13 +65,13 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         }
     }
 
-    @Override public void onReply(Models.Reply reply)
-    {
+    @Override
+    public void onReply(Models.Reply reply) {
         loadInventory();
     }
 
-    @Override public void onError(String message)
-    {
+    @Override
+    public void onError(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
@@ -199,38 +198,38 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                 .create();
 
         dialog.setOnShowListener(ignored ->
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                        .setOnClickListener(v -> {
-                            String name = editName.getText().toString().trim();
+                        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                                .setOnClickListener(v -> {
+                                    String name = editName.getText().toString().trim();
 
-                            String description = editDescription.getText().toString().trim();
+                                    String description = editDescription.getText().toString().trim();
 
-                            String quantityText = editQuantity.getText().toString().trim();
+                                    String quantityText = editQuantity.getText().toString().trim();
 
-                            if (name.isEmpty()) {
-                                editName.setError("Enter an item name.");
-                                return;
-                            }
+                                    if (name.isEmpty()) {
+                                        editName.setError("Enter an item name.");
+                                        return;
+                                    }
 
-                            int quantity;
+                                    int quantity;
 
-                            try {
-                                quantity = Integer.parseInt(quantityText);
-                            } catch (NumberFormatException e) {
-                                editQuantity.setError("Enter a valid quantity.");
-                                return;
-                            }
+                                    try {
+                                        quantity = Integer.parseInt(quantityText);
+                                    } catch (NumberFormatException e) {
+                                        editQuantity.setError("Enter a valid quantity.");
+                                        return;
+                                    }
 
-                            if (quantity <= 0) {
-                                editQuantity.setError("Quantity must be greater than zero.");
-                                return;
-                            }
+                                    if (quantity <= 0) {
+                                        editQuantity.setError("Quantity must be greater than zero.");
+                                        return;
+                                    }
 
 //----------USES create() from DataSync File-------------------
-                            sync.create(name, quantity);
-                            dialog.dismiss();
+                                    sync.create(name, quantity);
+                                    dialog.dismiss();
 
-                        })
+                                })
         );
 
         dialog.show();
@@ -243,8 +242,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     ) {
         EditText editQuantity = new EditText(this);
         editQuantity.setHint("Quantity to remove");
-        editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
-        );
+        editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
 
         int padding = (int) (24 * getResources().getDisplayMetrics().density);
 
@@ -254,39 +252,57 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                 .setTitle("Remove " + itemName)
                 .setMessage("Current quantity: " + currentQuantity)
                 .setView(editQuantity)
-                .setNegativeButton("Cancel", null)
+                .setNeutralButton("Cancel", null)
                 .setPositiveButton("Remove", null)
+                .setNegativeButton("Delete Item", null)
                 .create();
 
-        dialog.setOnShowListener(ignored ->
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                        .setOnClickListener(v -> {
-                            int quantity;
+        dialog.setOnShowListener(ignored -> {
+            //remove button
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                    .setOnClickListener(v -> {
+                        int quantity;
 
-                            try {
-                                quantity = Integer.parseInt(editQuantity.getText().toString().trim()
-                                );
-                            } catch (NumberFormatException e) {
-                                editQuantity.setError("Enter a valid quantity.");
-                                return;
-                            }
+                        try {
+                            quantity = Integer.parseInt(editQuantity.getText().toString().trim()
+                            );
+                        } catch (NumberFormatException e) {
+                            editQuantity.setError("Enter a valid quantity.");
+                            return;
+                        }
 
-                            if (quantity <= 0) {
-                                editQuantity.setError("Enter a quantity greater than zero.");
-                                return;
-                            }
+                        if (quantity <= 0) {
+                            editQuantity.setError("Enter a quantity greater than zero.");
+                            return;
+                        }
 
-                            if (quantity > currentQuantity) {
-                                editQuantity.setError("You cannot remove more than " + currentQuantity + ".");
-                                return;
-                            }
+                        if (quantity > currentQuantity) {
+                            editQuantity.setError("You cannot remove more than " + currentQuantity + ".");
+                            return;
+                        }
 
-                            sync.decrement(itemId, quantity);
+                        sync.decrement(itemId, quantity);
+                        dialog.dismiss();
+                        loadInventory();
+                    });
+
+            //delete button
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(v -> {
+                new AlertDialog.Builder(this)
+                        .setTitle("Permanently delete this item")
+                        .setMessage("Are you sure you want to permanently delete " + itemName + "?\n\nThis action cannot be undone.")
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Delete", (confirmDialog, which) -> {
+                            sync.delete(itemId);
+                            Toast.makeText(this, itemName + " permanently deleted.", Toast.LENGTH_SHORT).show();
                             dialog.dismiss();
-
+                            loadInventory();
                         })
-        );
-
+                        .show();
+            });
+        });
         dialog.show();
     }
 }
+
+
