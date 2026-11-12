@@ -37,7 +37,7 @@ public class DataSync
     }
 
     // ---- Commands (call from the UI; one at a time) ----
-
+//-------------------Inventory commands----------------------
     public void refreshAll()
     {
         run(Commands.listInventory());
@@ -72,6 +72,7 @@ public class DataSync
     {
         run(Commands.deleteInventoryItem(itemId));
     }
+    //--------------End of inventory commands-----------------
 
     // ---- Internals ----
 
