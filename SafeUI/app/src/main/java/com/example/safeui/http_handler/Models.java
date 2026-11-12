@@ -71,26 +71,26 @@ public class Models
         }
 
         //Will do like inventory where option to return 1 user and then multiple users
-        public User asUser()
-        {
-            if (user == null || !user.isJsonObject())
-            {
-                return null;
-            }
-            return GSON.fromJson(user, user.class);
-
-
-
-        }
-
-        public List<User> asUsers()
-        {
-            if(users = null ||!users.isJsonArray())
-            {
-                return new ArrayList();
-            }
-            return GSON.fromJson(users, new TypeToken<List<User>>(){}.getType());
-        }
+//        public User asUser()
+//        {
+//            if (user == null || !user.isJsonObject())
+//            {
+//                return null;
+//            }
+//            return GSON.fromJson(user, user.class);
+//
+//
+//
+//        }
+//
+//        public List<User> asUsers()
+//        {
+//            if(users = null ||!users.isJsonArray())
+//            {
+//                return new ArrayList();
+//            }
+//            return GSON.fromJson(users, new TypeToken<List<User>>(){}.getType());
+//        }
 
 
 
