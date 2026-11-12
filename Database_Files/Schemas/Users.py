@@ -5,9 +5,10 @@ class User(BaseModel):
     email: str
     isAdmin: bool = False
     hasOpenDoorPrivilege: bool = False
+    password: str | None = None
 
 class UserCreate(User):
-    password: str
+    pass
 
 class UserUpdate(User):
     user_id: int
@@ -17,3 +18,6 @@ class UserResponse(User):
     model_config = ConfigDict(from_attributes=True)
     user_id: int
 
+class UserLogin(BaseModel):
+    username:str
+    password:str
