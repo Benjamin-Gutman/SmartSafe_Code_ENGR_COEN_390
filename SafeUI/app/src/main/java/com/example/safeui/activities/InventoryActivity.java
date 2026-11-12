@@ -167,9 +167,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         buttonRemove.setAllCaps(false);
         itemCard.addView(buttonRemove);
 
-        buttonRemove.setOnClickListener(
-                v -> showRemoveDialog(itemId, name, quantity)
-        );
+        buttonRemove.setOnClickListener(v -> showRemoveDialog(itemId, name, quantity));
 
         layoutInventoryItems.addView(itemCard);
     }
@@ -190,9 +188,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
 
         EditText editQuantity = new EditText(this);
         editQuantity.setHint("Quantity to add");
-        editQuantity.setInputType(
-                android.text.InputType.TYPE_CLASS_NUMBER
-        );
+        editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         dialogLayout.addView(editQuantity);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -205,19 +201,14 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         dialog.setOnShowListener(ignored ->
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE)
                         .setOnClickListener(v -> {
-                            String name = editName.getText()
-                                    .toString().trim();
+                            String name = editName.getText().toString().trim();
 
-                            String description = editDescription.getText()
-                                    .toString().trim();
+                            String description = editDescription.getText().toString().trim();
 
-                            String quantityText = editQuantity.getText()
-                                    .toString().trim();
+                            String quantityText = editQuantity.getText().toString().trim();
 
                             if (name.isEmpty()) {
-                                editName.setError(
-                                        "Enter an item name."
-                                );
+                                editName.setError("Enter an item name.");
                                 return;
                             }
 
@@ -226,19 +217,16 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                             try {
                                 quantity = Integer.parseInt(quantityText);
                             } catch (NumberFormatException e) {
-                                editQuantity.setError(
-                                        "Enter a valid quantity."
-                                );
+                                editQuantity.setError("Enter a valid quantity.");
                                 return;
                             }
 
                             if (quantity <= 0) {
-                                editQuantity.setError(
-                                        "Quantity must be greater than zero."
-                                );
+                                editQuantity.setError("Quantity must be greater than zero.");
                                 return;
                             }
 
+//----------USES create() from DataSync File-------------------
                             sync.create(name, quantity);
                             dialog.dismiss();
 
@@ -255,21 +243,16 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     ) {
         EditText editQuantity = new EditText(this);
         editQuantity.setHint("Quantity to remove");
-        editQuantity.setInputType(
-                android.text.InputType.TYPE_CLASS_NUMBER
+        editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
         );
 
-        int padding = (int) (24 * getResources()
-                .getDisplayMetrics().density);
+        int padding = (int) (24 * getResources().getDisplayMetrics().density);
 
-        editQuantity.setPadding(padding, padding / 2,
-                padding, padding / 2);
+        editQuantity.setPadding(padding, padding / 2, padding, padding / 2);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Remove " + itemName)
-                .setMessage(
-                        "Current quantity: " + currentQuantity
-                )
+                .setMessage("Current quantity: " + currentQuantity)
                 .setView(editQuantity)
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Remove", null)
@@ -281,29 +264,20 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                             int quantity;
 
                             try {
-                                quantity = Integer.parseInt(
-                                        editQuantity.getText()
-                                                .toString().trim()
+                                quantity = Integer.parseInt(editQuantity.getText().toString().trim()
                                 );
                             } catch (NumberFormatException e) {
-                                editQuantity.setError(
-                                        "Enter a valid quantity."
-                                );
+                                editQuantity.setError("Enter a valid quantity.");
                                 return;
                             }
 
                             if (quantity <= 0) {
-                                editQuantity.setError(
-                                        "Enter a quantity greater than zero."
-                                );
+                                editQuantity.setError("Enter a quantity greater than zero.");
                                 return;
                             }
 
                             if (quantity > currentQuantity) {
-                                editQuantity.setError(
-                                        "You cannot remove more than "
-                                                + currentQuantity + "."
-                                );
+                                editQuantity.setError("You cannot remove more than " + currentQuantity + ".");
                                 return;
                             }
 
