@@ -58,15 +58,11 @@ public class Commands
     }
 
     // User commands
-    public static String createUser(String username, String email,  String password)
+    public static String createUser(String username, String email)
     {
-        // if its first user created( not sure if the table will exist yet at this point so will take into account if its null)
-        //otherwise will by default set Admin/opendoorpriviledges as False. (FYI its written priviledges, but for some reason its written as privileges in the code)
-        if (databaseHelper.listUsers().length == 0 || databaseHelper.listUsers().length == null) {
-            return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin True --hasOpenDoorPrivileges False";
-        }else{
-            return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin False --hasOpenDoorPrivileges False";
-        }
+        
+        return "createUser --name " + username + " --email " + email;
+      
     }
 
     public static String getUserByID(int user_id)
@@ -94,9 +90,9 @@ public class Commands
         return "updateUserPassword --userID " + user_id+ " --newpassword " + new_password;
     }
 
-    public static String updateUserPrivileges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivilege)
+    public static String updateUserPrivilege(int user_id, boolean isAdmin, boolean hasOpenDoorPrivilege)
     {
-        return "updateUserPrivileges --userID " + user_id + " --isAdmin " + isAdmin + "--hasOpenDoorPrivliege " + hasOpenDoorPrivilege;
+        return "updateUserPrivilege --userID " + user_id + " --isAdmin " + isAdmin + "--hasOpenDoorPrivilege " + hasOpenDoorPrivilege;
     }
 
     public static String deleteUser(int user_id)
@@ -140,6 +136,11 @@ public class Commands
     public static String deleteAccessHistory(int access_id)
     {
         return "deleteAccessHistory --userID " + access_id;
+    }
+
+    public static Static isLocked()
+    {
+        return "isLocked";
     }
 
 

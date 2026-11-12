@@ -43,6 +43,7 @@ public class Models
         public JsonElement history;
         public JsonElement users;
         public Integer item_id; // Not sure why its here, but will keep just in case for now
+        public Integer user_id; 
     
 
         public boolean isOk()
@@ -73,7 +74,7 @@ public class Models
         //Will do like inventory where option to return 1 user and then multiple users
         public User asUser()
         {
-            if (user == null || !user.isJsonObject())
+            if (users == null || !users.isJsonObject())
             {
                 return null;
             }
