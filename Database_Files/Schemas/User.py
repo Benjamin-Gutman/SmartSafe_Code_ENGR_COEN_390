@@ -8,10 +8,6 @@ class User(BaseModel):
     is_deleted : bool
     password_hashed: str
 
-
-
-
-
 class UserCreate(User):
     pass
 

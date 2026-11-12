@@ -4,7 +4,7 @@ import json
 import shlex
 import pydantic
 from contextlib import contextmanager
- 
+
 import websockets
 from sqlalchemy.orm import sessionmaker
  
@@ -12,12 +12,10 @@ import DatabaseHelper as db_helper
 from Database import engine
 from Schemas.Inventory import InventoryCreate, InventoryResponse, InventoryUpdate
 from Schemas.Inventory_History import InventoryHistoryResponse
-from Schemas.Users import UserUpdate, UserResponse, UserCreate
+from Schemas.Users import UserUpdate, UserResponse, UserCreate, UserLogin
 from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, AccessHistoryResponse, AccessHistoryUpdate
  
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
-
-
 
 class CommandError(Exception):
    #Raised for bad commands or when argparse wants to exit.
@@ -45,6 +43,16 @@ class SocketArgumentParser(argparse.ArgumentParser):
         if message:
             text += message
         raise CommandError(text.strip(), is_help=(status == 0))
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    v = v.strip().lower()
+    if v in ("true", "t", "yes", "y", "1"):
+        return True
+    if v in ("false", "f", "no", "n", "0"):
+        return False
+    raise argparse.ArgumentTypeError(f"Boolean value expected, got {v!r}")
  
  # reads stuff from the Commands.java file in the android App.
 def build_command_parser() -> SocketArgumentParser:
@@ -85,22 +93,23 @@ def build_command_parser() -> SocketArgumentParser:
     p.add_argument("--name", required=True)
     p.add_argument("--email") 
     p.add_argument("--password")
-    p.add_argument("--isAdmin", type=bool)
-    p.add_argument("--hasOpenDoorPrivileges",type=bool)
+    p.add_argument("--isAdmin", type=str2bool)
+    p.add_argument("--hasOpenDoorPrivilege",type=str2bool)
 
     p = sub.add_parser("getUserByID", help= "get user using their ID", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("user_id", type=int, required=True)
+    p.add_argument("user_id", type=int)
 
     p = sub.add_parser("getUserByUsername", help= "get user using their Username", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("username", required=True)
+    p.add_argument("username")
 
     p = sub.add_parser("listUsers", help= "get list of users", formatter_class=argparse.RawTextHelpFormatter)
 
     p = sub.add_parser("updateUserInfo", help= "update a user's parameters(name, email)", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--user_id", type=int, required=True)
     p.add_argument("--name", required=True)
-    p.add_argument("--email",  required=True) 
-    p.add_argument("--isAdmin", type=bool, required=True)
-    p.add_argument("--hasOpenDoorPrivileges", type=bool, required=True)
+    p.add_argument("--email") 
+    p.add_argument("--isAdmin", type=str2bool, required=True)
+    p.add_argument("--hasOpenDoorPrivilege", type=str2bool)
     p.add_argument("--password")
 
     p = sub.add_parser("updatePassword", help= "update a user's password", formatter_class=argparse.RawTextHelpFormatter)
@@ -109,20 +118,22 @@ def build_command_parser() -> SocketArgumentParser:
 
     p = sub.add_parser("updateUserPrivileges", help= "update a user's priviledges(Admin rights, SafeDoor rights)", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--user_id", type=int, required=True)
-    p.add_argument("--isAdmin", type=bool, required=True)
-    p.add_argument("--hasOpenDoorPrivileges", type=bool)
+    p.add_argument("--isAdmin", type=str2bool, required=True)
+    p.add_argument("--hasOpenDoorPrivilege", type=str2bool)
 
     p = sub.add_parser("deleteUser", help= "Delete a user using their ID", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--user_id", type=int, required=True)
 
     p = sub.add_parser("verifyUser", help= "for verifying a user", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--user_name", required=True)
-    p.add_argument("--password", required=True)
+    p.add_argument("--name", required=True)
+    p.add_argument("--password")
 
-    #User Access history part
+#--------------------------------------------------------------------
+#User Access history part (NOT COMPLETE NOR FUNCTIONAL)
+#--------------------------------------------------------------------
     p = sub.add_parser("createAccess", help= "Create an entry of Access", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--user_id", type=int, required=True)
-    p.add_argument("--changes_made" )
+    p.add_argument("--changes_made")
     p.add_argument("--timestamp")
 
     p = sub.add_parser("getAccessHistory", help= "Retrieve a specific Access entry", formatter_class=argparse.RawTextHelpFormatter)
@@ -142,8 +153,6 @@ def build_command_parser() -> SocketArgumentParser:
     p = sub.add_parser("getAccessHistoryByUser", help= "Retrieve access history for specific user", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--user_id", type=int, required=True)
 
-    #User Access history part
-    
 
     sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)
     return parser
@@ -238,7 +247,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
         if cmd == "createUser":
             #will automatically set user as admin if first one.
             user = db_helper.create_user(
-                db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=args.isAdmin, hasOpenDoorPrivileges=args.hasOpenDoorPrivileges)
+                db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=args.isAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrivilege)
             )
             return ok(cmd, message="User created", user=user_to_dict(user))
     
@@ -256,20 +265,19 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
     
         if cmd == "listUsers":
             users = db_helper.get_all_users(db)
-            return ok(cmd, users=[users_to_dict(i) for i in users])
+            return ok(cmd, users=[user_to_dict(i) for i in users])
     
         if cmd == "updateUserInfo":
-            update = UserUpdate(
-                username=args.username, email=args.email)
+            update = UserUpdate(user_id=args.user_id, username=args.name, email=args.email, isAdmin=args.isAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrivilege)
+            if hasattr(args, "password") and args.password is not None:
+                update.password=args.password
             user = db_helper.update_user(db, args.user_id, update)
             if user is None:
                 return error(f"User {args.user_id} not found", cmd)
             return ok(cmd, message="User updated", user=user_to_dict(user))
 
         if cmd == "updateUserPrivileges":
-            update = UserUpdate(
-                user_id=args.user_id, isAdmin=args.isAdmin, hasOpenDoorPrivileges=args.hasOpenDoorPrivileges)
-            user = db_helper.update_user_privileges(db, args.user_id, update)
+            user = db_helper.update_user_privileges(db, args.user_id, args.isAdmin, args.hasOpenDoorPrivilege)
             if user is None:
                 return error(f"User {args.user_id} not found", cmd)
             return ok(cmd, message="User updated", user=user_to_dict(user))
@@ -284,23 +292,24 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             return ok(cmd, message="User Password  updated", user=user_to_dict(user))
 
         if cmd == "deleteUser":
-            deleted = db_helper.delete_inventoryuser(db, args.user_id)
+            deleted = db_helper.delete_user(db, args.user_id)
             if not deleted:
                 return error(f"User {args.user_id} not found", cmd)
             # Nothing to return for a deleted user, so send a confirmation.
             return ok(cmd, message=f"User {args.user_id} deleted", user_id=args.user_id)
 
         if cmd == "verifyUser":
-            verification = db_helper.verify_user(db, args.user_name, args.password)
+            login = UserLogin(username=args.name, password=args.password)
+            verification = db_helper.verify_login(db, login)
             if verification is None:
-                return error(f"User {args.user_id} not found", cmd)
+                return error(f"User {args.name} not found", cmd)
             if verification == True :
-                return ok(cmd, message=f"User {args.user_id} is verified with this Password", user_id=args.user_id)
+                return ok(cmd, message=f"User {args.name} is verified with this Password")
             else : 
-                return ok(cmd, message=f"User {args.user_id} could not be verified with this Password", user_id=args.user_id)  
+                return ok(cmd, message=f"User {args.name} could not be verified with this Password")  
         
 
-        # Access history 
+        # Access history (NOT COMPLETE NOR FUNCTIONAL)
 
         if cmd == "createAccess":
             history_data = AccessHistoryCreate(

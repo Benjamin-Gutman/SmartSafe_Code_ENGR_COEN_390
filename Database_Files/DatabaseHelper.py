@@ -202,7 +202,7 @@ def delete_user(db: Session, user_id: int) -> bool:
 def verify_login(db: Session, user: UserLogin) -> bool:
     db_user = get_user_by_username(db, user.username)
     if db_user is None:
-        return False
+        return None #set like this to differenciate an inexistent user from a wrong password
     return db_user.password == user.password
 
 def create_access_history(db: Session, access_history: AccessHistoryCreate) -> AccessHistoryModel:
