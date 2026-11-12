@@ -3,11 +3,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from Database import Base, engine
-from Models.Inventory import Inventory
-from Models.Inventory_History import InventoryHistory
-from Models.User import User
+from Models.Inventory import InventoryModel
+from Models.Inventory_History import InventoryHistoryModel
+from Models.User import UserModel
+from Models.Access_History import AccessHistoryModel
+
 from Schemas.Inventory import InventoryCreate, InventoryUpdate
-from Schemas.Users import User, UserCreate, UserUpdate, UserResponse
+from Schemas.Users import User, UserCreate, UserUpdate, UserResponse, UserLogin
 from Schemas.Access_History import AccessHistory, AccessHistoryCreate, AccessHistoryUpdate, AccessHistoryDelete, AccessHistoryResponse
 
 
@@ -16,11 +18,11 @@ def create_tables() -> None:
     Base.metadata.create_all(bind=engine)
 
 
-def create_inventory(db: Session, item: InventoryCreate) -> Inventory:
+def create_inventory(db: Session, item: InventoryCreate) -> InventoryModel:
     if item.quantity <= 0:
         raise ValueError("Initial inventory quantity must be greater than zero")
 
-    inventory_item = Inventory(item_name=item.item_name, quantity=item.quantity)
+    inventory_item = InventoryModel(item_name=item.item_name, quantity=item.quantity)
     db.add(inventory_item)
     db.flush()
     record_history(db, inventory_item, "add")
@@ -29,23 +31,23 @@ def create_inventory(db: Session, item: InventoryCreate) -> Inventory:
     return inventory_item
 
 
-def add_to_inventory(db: Session, item_id: int, quantity: int) -> Inventory | None:
+def add_to_inventory(db: Session, item_id: int, quantity: int) -> InventoryModel | None:
     if quantity < 0:
         raise ValueError("Quantity to add cannot be negative")
     return change_inventory_quantity(db, item_id, quantity)
 
 
-def remove_from_inventory(db: Session, item_id: int, quantity: int) -> Inventory | None:
+def remove_from_inventory(db: Session, item_id: int, quantity: int) -> InventoryModel | None:
     if quantity < 0:
         raise ValueError("Quantity to remove cannot be negative")
     return change_inventory_quantity(db, item_id, -quantity)
 
 
-def change_inventory_quantity(db: Session, item_id: int, quantity_change: int) -> Inventory | None:
+def change_inventory_quantity(db: Session, item_id: int, quantity_change: int) -> InventoryModel | None:
     if quantity_change == 0:
         return get_inventory(db, item_id)
 
-    inventory_item = db.get(Inventory, item_id)
+    inventory_item = db.get(InventoryModel, item_id)
     if inventory_item is None:
         return None
 
@@ -61,20 +63,20 @@ def change_inventory_quantity(db: Session, item_id: int, quantity_change: int) -
     return inventory_item
 
 
-def get_inventory(db: Session, item_id: int) -> Inventory | None:
-    return db.get(Inventory, item_id)
+def get_inventory(db: Session, item_id: int) -> InventoryModel | None:
+    return db.get(InventoryModel, item_id)
 
 
-def get_all_inventory(db: Session) -> list[Inventory]:
-    statement = select(Inventory).order_by(Inventory.item_id)
+def get_all_inventory(db: Session) -> list[InventoryModel]:
+    statement = select(InventoryModel).order_by(InventoryModel.item_id)
     return list(db.scalars(statement))
 
 
-def update_inventory(db: Session, item_id: int, item: InventoryUpdate) -> Inventory | None:
+def update_inventory(db: Session, item_id: int, item: InventoryUpdate) -> InventoryModel | None:
     if item.quantity < 0:
         raise ValueError("Inventory quantity cannot be negative")
 
-    inventory_item = db.get(Inventory, item_id)
+    inventory_item = db.get(InventoryModel, item_id)
     if inventory_item is None:
         return None
 
@@ -96,7 +98,7 @@ def update_inventory(db: Session, item_id: int, item: InventoryUpdate) -> Invent
 
 
 def delete_inventory(db: Session, item_id: int) -> bool:
-    inventory_item = db.get(Inventory, item_id)
+    inventory_item = db.get(InventoryModel, item_id)
     if inventory_item is None:
         return False
 
@@ -106,19 +108,19 @@ def delete_inventory(db: Session, item_id: int) -> bool:
     return True
 
 
-def get_inventory_history(db: Session, item_id: int | None = None) -> list[InventoryHistory]:
-    statement = select(InventoryHistory)
+def get_inventory_history(db: Session, item_id: int | None = None) -> list[InventoryHistoryModel]:
+    statement = select(InventoryHistoryModel)
     if item_id is not None:
-        statement = statement.where(InventoryHistory.item_id == item_id)
+        statement = statement.where(InventoryHistoryModel.item_id == item_id)
     statement = statement.order_by(
-        InventoryHistory.timestamp, InventoryHistory.history_id
+        InventoryHistoryModel.timestamp, InventoryHistoryModel.history_id
     )
     return list(db.scalars(statement))
 
 
-def record_history(db: Session, item: Inventory, action: str) -> None:
+def record_history(db: Session, item: InventoryModel, action: str) -> None:
     db.add(
-        InventoryHistory(
+        InventoryHistoryModel (
             item_id=item.item_id,
             item_name=item.item_name,
             quantity=item.quantity,
@@ -126,8 +128,8 @@ def record_history(db: Session, item: Inventory, action: str) -> None:
         )
     )
 
-def create_user(db: Session, user: UserCreate) -> User:
-    db_user = User(
+def create_user(db: Session, user: UserCreate) -> UserModel:
+    db_user = UserModel(
         username=user.username,
         email=user.email,
         password = user.password,
@@ -139,19 +141,19 @@ def create_user(db: Session, user: UserCreate) -> User:
     db.refresh(db_user)
     return db_user
 
-def get_user(db: Session, user_id: int) -> User | None:
-    return db.get(User, user_id)
+def get_user(db: Session, user_id: int) -> UserModel | None:
+    return db.get(UserModel, user_id)
 
-def get_user_by_username(db: Session, username: str) -> User | None:
-    statement = select(User).where(User.username == username)
+def get_user_by_username(db: Session, username: str) -> UserModel | None:
+    statement = select(UserModel).where(UserModel.username == username)
     return db.scalars(statement).first()
 
-def get_all_users(db: Session) -> list[User]:
-    statement = select(User).order_by(User.user_id)
+def get_all_users(db: Session) -> list[UserModel]:
+    statement = select(UserModel).order_by(UserModel.user_id)
     return list(db.scalars(statement))
 
-def update_user(db: Session, user_id: int, user: UserUpdate) -> User | None:
-    db_user = db.get(User, user_id)
+def update_user(db: Session, user_id: int, user: UserUpdate) -> UserModel | None:
+    db_user = db.get(UserModel, user_id)
     if db_user is None:
         return None
 
@@ -167,8 +169,8 @@ def update_user(db: Session, user_id: int, user: UserUpdate) -> User | None:
     db.refresh(db_user)
     return db_user
 
-def update_user_password(db: Session, user_id: int, new_password: str) -> User | None:
-    db_user = db.get(User, user_id)
+def update_user_password(db: Session, user_id: int, new_password: str) -> UserModel | None:
+    db_user = db.get(UserModel, user_id)
     if db_user is None:
         return None
 
@@ -177,8 +179,8 @@ def update_user_password(db: Session, user_id: int, new_password: str) -> User |
     db.refresh(db_user)
     return db_user
 
-def update_user_privileges(db: Session, user_id: int, isAdmin: bool, hasOpenDoorPrivilege: bool) -> User | None:
-    db_user = db.get(User, user_id)
+def update_user_privileges(db: Session, user_id: int, isAdmin: bool, hasOpenDoorPrivilege: bool) -> UserModel | None:
+    db_user = db.get(UserModel, user_id)
     if db_user is None:
         return None
 
@@ -189,7 +191,7 @@ def update_user_privileges(db: Session, user_id: int, isAdmin: bool, hasOpenDoor
     return db_user
 
 def delete_user(db: Session, user_id: int) -> bool:
-    db_user = db.get(User, user_id)
+    db_user = db.get(UserModel, user_id)
     if db_user is None:
         return False
 
@@ -198,13 +200,20 @@ def delete_user(db: Session, user_id: int) -> bool:
     return True
 
 def verify_login(db: Session, user: UserLogin) -> bool:
-    return 0
-    
+    db_user = get_user_by_username(db, user.username)
+        return False
+    return db_user.password == user.password
 
-def create_access_history(db: Session, access_history: AccessHistoryCreate) -> AccessHistory:
-    db_access_history = AccessHistory(
+def create_access_history(db: Session, access_history: AccessHistoryCreate) -> AccessHistoryModel:
+    
+    changes = [
+        change.model_dump(mode="json")
+        for change in access_history.changes_made
+    ]
+    
+    db_access_history = AccessHistoryModel(
         user_id=access_history.user_id,
-        changes_made=access_history.changes_made,
+        changes_made= changes,
         timestamp=access_history.timestamp,
     )
     db.add(db_access_history)
@@ -212,29 +221,33 @@ def create_access_history(db: Session, access_history: AccessHistoryCreate) -> A
     db.refresh(db_access_history)
     return db_access_history
 
-def get_access_history(db: Session, access_id: int) -> AccessHistory | None:
-    return db.get(AccessHistory, access_id)
 
-def get_all_access_history(db: Session) -> list[AccessHistory]:
-    statement = select(AccessHistory).order_by(AccessHistory.timestamp)
+def get_access_history(db: Session, access_id: int) -> AccessHistoryModel | None:
+    return db.get(AccessHistoryModel, access_id)
+
+def get_all_access_history(db: Session) -> list[AccessHistoryModel]:
+    statement = select(AccessHistoryModel).order_by(AccessHistoryModel.timestamp)
     return list(db.scalars(statement))
 
-def update_access_history(db: Session, access_id: int, access_history: AccessHistoryUpdate) -> AccessHistory | None:
-    db_access_history = db.get(AccessHistory, access_id)
+def update_access_history(db: Session, access_id: int, access_history: AccessHistoryUpdate) -> AccessHistoryModel | None:
+
+    changes = [
+        change.model_dump(mode="json")
+        for change in access_history.changes_made
+    ]
+    
+    db_access_history = db.get(AccessHistoryModel, access_id)
     if db_access_history is None:
         return None
 
     db_access_history.user_id = access_history.user_id
-    db_access_history.changes_made = access_history.changes_made
+    db_access_history.changes_made = changes
     db_access_history.timestamp = access_history.timestamp
 
     db.commit()
     db.refresh(db_access_history)
     return db_access_history
 
-def get_access_history_by_user(db: Session, user_id: int) -> list[AccessHistory]:
-    statement = select(AccessHistory).where(AccessHistory.user_id == user_id).order_by(AccessHistory.timestamp)
+def get_access_history_by_user(db: Session, user_id: int) -> list[AccessHistoryModel]:
+    statement = select(AccessHistoryModel).where(AccessHistoryModel.user_id == user_id).order_by(AccessHistoryModel.timestamp)
     return list(db.scalars(statement))
-
-
-

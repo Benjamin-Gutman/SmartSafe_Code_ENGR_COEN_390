@@ -28,7 +28,7 @@ class UTCDateTime(TypeDecorator[datetime]):
         return value.astimezone(timezone.utc)
 
 
-class InventoryHistory(Base):
+class InventoryHistoryModel(Base):
     __tablename__ = "inventory_history"
 
     history_id: Mapped[int] = mapped_column(
