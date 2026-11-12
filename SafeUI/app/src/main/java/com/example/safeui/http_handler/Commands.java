@@ -58,16 +58,16 @@ public class Commands
     }
 
     // User commands
-    public static String createUser(String username, String email,  String password)
-    {
-        // if its first user created( not sure if the table will exist yet at this point so will take into account if its null)
-        //otherwise will by default set Admin/opendoorpriviledges as False. (FYI its written priviledges, but for some reason its written as privileges in the code)
-        if (databaseHelper.listUsers().length == 0 || databaseHelper.listUsers().length == null) {
-            return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin True --hasOpenDoorPrivileges False";
-        }else{
-            return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin False --hasOpenDoorPrivileges False";
-        }
-    }
+//    public static String createUser(String username, String email,  String password)
+//    {
+//        // if its first user created( not sure if the table will exist yet at this point so will take into account if its null)
+//        //otherwise will by default set Admin/opendoorpriviledges as False. (FYI its written priviledges, but for some reason its written as privileges in the code)
+//        if (databaseHelper.listUsers().length == 0 || databaseHelper.listUsers().length == null) {
+//            return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin True --hasOpenDoorPrivileges False";
+//        }else{
+//            return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin False --hasOpenDoorPrivileges False";
+//        }
+//    }
 
     public static String getUserByID(int user_id)
     {
@@ -105,10 +105,10 @@ public class Commands
     }
 
     //Not exactly sure how the return process will work for this to verify login. 
-    public static String verifyUser( int user_id, String password)
-    {
-        return "verifyUser --userID " + user_id + " --username " + username + " --password " + password;
-    }
+//    public static String verifyUser( int user_id, String password)
+//    {
+//        return "verifyUser --userID " + user_id + " --username " + username + " --password " + password;
+//    }
 
     // User Access History related commands
 
