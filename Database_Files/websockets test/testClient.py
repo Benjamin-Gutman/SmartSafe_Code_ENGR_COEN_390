@@ -7,8 +7,8 @@ def run_client():
         #websocket.send("updateUserInfo --user_id 1 --name admin --email admin@yahoo.ca --isAdmin True --hasOpenDoorPrivilege True")
         #websocket.send("updateUserPrivileges --user_id 1 --isAdmin true --hasOpenDoorPrivilege false")
         #websocket.send("deleteUser --user_id 1")
-        websocket.send("verifyUser --name go --password admin132")
-        #websocket.send("listUsers")
+        #websocket.send("verifyUser --name go --password admin132")
+        websocket.send("listUsers")
         
         # Await the response from the server
         response = websocket.recv()

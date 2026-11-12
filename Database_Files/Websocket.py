@@ -245,7 +245,6 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
 
         # User database commands (will always have keyword User)
         if cmd == "createUser":
-            #will automatically set user as admin if first one.
             user = db_helper.create_user(
                 db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=args.isAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrivilege)
             )
