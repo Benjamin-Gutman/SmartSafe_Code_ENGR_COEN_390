@@ -147,6 +147,8 @@ def build_command_parser() -> SocketArgumentParser:
     p.add_argument("-isOpen", type=str2bool)
     p.add_argument("-alarm", type=str2bool)
 
+    p = sub.add_parser("getStatus", help= "give save status", formatter_class=argparse.RawTextHelpFormatter)
+
     
 
     sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)

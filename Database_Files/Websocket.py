@@ -1,12 +1,15 @@
 import argparse
 import asyncio
 import json
+import re
 import shlex
 import pydantic
 from contextlib import contextmanager
+from pydantic import BaseModel
 from argparseCommands import SocketArgumentParser, CommandError, build_command_parser
 
 import websockets
+from websockets.sync.client import connect
 from sqlalchemy.orm import sessionmaker
  
 import DatabaseHelper as db_helper
@@ -18,16 +21,25 @@ from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, Acc
  
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
-class Status():
-    isLocked = bool
-    isOpen = bool
-    alarm = bool
-doorStatus = Status
+class Status(BaseModel):
+    isLocked: bool = True
+    isOpen: bool = False
+    alarm: bool = False
+doorStatus = Status()
+
+def syncStatus(): #sync doorStatus with HW program
+    # Establish a persistent connection to the server
+    with connect("ws://localhost:8765") as websocket:
+        websocket.send("status")
+        response = websocket.recv()
+        state = {k: v.lower() == "true" for k, v in re.findall(r"(\w+)\s*:\s*(\w+)", response)}
+        doorStatus.isLocked = state["locked"]
+        doorStatus.isOpen = state["open"]
+        doorStatus.alarm = state["alarm"]
  
 # Serialization helpers
 def item_to_dict(item) -> dict:
     return InventoryResponse.model_validate(item).model_dump(mode="json")
- 
  
 def history_to_dict(entry) -> dict:
     return InventoryHistoryResponse.model_validate(entry).model_dump(mode="json")
@@ -35,14 +47,14 @@ def history_to_dict(entry) -> dict:
 def user_to_dict(user) -> dict:
     return UserResponse.model_validate(user).model_dump(mode = "json")
 
-
 def access_history_to_dict(access) -> dict:
     return AccessHistoryResponse.model_validate(access).model_dump(mode = "json")
- 
+
+def status_to_dict(status) -> dict:
+    return Status.model_validate(status).model_dump(mode = "json")
  
 def ok(command: str, **payload) -> dict:
     return {"status": "ok", "command": command, **payload}
- 
  
 def error(message: str, command: str | None = None) -> dict:
     return {"status": "error", "command": command, "message": message}
@@ -109,7 +121,9 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             entries = db_helper.get_inventory_history(db, args.item_id)
             return ok(cmd, history=[history_to_dict(e) for e in entries])
 
-        # User database commands (will always have keyword User)
+#--------------------------------------------------------------------
+# User database commands (will always have keyword User)
+#--------------------------------------------------------------------
         if cmd == "createUser":
             user = db_helper.create_user(
                 db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=args.isAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrivilege)
@@ -217,11 +231,17 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
 #--------------------------------------------------------------------
 #HW management part (NOT COMPLETE)
 #--------------------------------------------------------------------
-        if cmd == "giveStatus":
+        if cmd == "giveStatus": #will be changed later when scanning is implemented
             doorStatus.isLocked = args.isLocked
             doorStatus.isOpen = args.isOpen
             doorStatus.alarm = args.alarm
             return ok(cmd, message="status updated")
+
+        if cmd == "getStatus":
+            return ok(cmd, doorStatus=status_to_dict(doorStatus))
+             
+
+        
  
     return error(f"Unhandled command '{cmd}'", cmd)
 
@@ -266,6 +286,7 @@ async def main(host: str, port: int) -> None:
         print(f"Inventory websocket listening on ws://{host}:{port}")
         await asyncio.Future()  # run forever
 
+#syncStatus() #only run when testing with HW program
 try:
     asyncio.run(main("0.0.0.0", 8765))
 except KeyboardInterrupt:
