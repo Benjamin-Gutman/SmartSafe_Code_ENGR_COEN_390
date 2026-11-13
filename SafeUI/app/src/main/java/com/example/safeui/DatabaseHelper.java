@@ -297,4 +297,89 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         );
     }
 
+    // Returns the username only if it exists in the local users table.
+// TODO: Replace this local lookup with the Raspberry Pi user system
+// once Pi-based user authentication is implemented.
+    public String getExistingUsername(String username) {
+
+        SQLiteDatabase db = getReadableDatabase();
+
+        try (Cursor cursor = db.query(
+                USERS_TABLE,
+                new String[]{"username"},
+                "username = ?",
+                new String[]{username.trim()},
+                null, null, null)) {
+
+            if (cursor.moveToFirst()) {
+                return cursor.getString(0);
+            }
+
+            return null;
+        }
+    }
+
+
+    // Adds an inventory event to the local history table.
+// TODO: Eventually replace this local insert with a Raspberry Pi
+// history command so all devices share the same inventory history.
+    public boolean addInventoryHistory(
+            int itemId,
+            String itemName,
+            String username,
+            String action,
+            int quantityChange) {
+
+        SQLiteDatabase db = getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+
+        values.put("item_id", itemId);
+        values.put("item_name", itemName);
+        values.put("username", username);
+        values.put("action", action);
+        values.put("quantity_change", quantityChange);
+        values.put("event_time", getCurrentTimestamp());
+
+        long result = db.insert("inventory_history", null, values);
+
+        return result != -1;
+    }
+
+
+    // Retrieves all inventory history entries, newest first.
+    public Cursor getInventoryHistory() {
+
+        SQLiteDatabase db = getReadableDatabase();
+
+        return db.query(
+                "inventory_history",
+                new String[]{
+                        "id",
+                        "item_id",
+                        "item_name",
+                        "username",
+                        "action",
+                        "quantity_change",
+                        "event_time"
+                },
+                null, null, null, null,
+                "id DESC"
+        );
+    }
+//if the code can't retrieve the inventory item through the pi it will use this method
+    public int getInventoryItemIdByName(String itemName) {
+        SQLiteDatabase db = getReadableDatabase();
+
+        try (Cursor cursor = db.query("inventory",
+                new String[]{"item_id"}, "item_name = ?",
+                new String[]{itemName}, null, null, null)) {
+
+            if (cursor.moveToFirst()) {
+                return cursor.getInt(0);
+            }
+            return -1;
+        }
+    }
+
 }

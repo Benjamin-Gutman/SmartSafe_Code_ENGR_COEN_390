@@ -4,12 +4,15 @@ import android.app.AlertDialog;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.widget.Toolbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -27,10 +30,39 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     private Button buttonAddItem;
     private Button buttonBackHome;
 
+    private Toolbar toolbarInventory;
+    private TextView textInventoryTitle;
+    private TextView textInventorySubtitle;
+    private boolean showingHistory = false;
+
+    // Holds the inventory operation until the Pi confirms success.
+    private String pendingHistoryAction = null;
+    private String pendingHistoryItemName = null;
+    private int pendingHistoryItemId = -1;
+    private int pendingHistoryQuantity = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_inventory);
+        toolbarInventory = findViewById(R.id.toolbarInventory);
+
+        toolbarInventory.inflateMenu(R.menu.inventory_menu);
+
+        toolbarInventory.setOnMenuItemClickListener(item -> {
+
+            if (item.getItemId() == R.id.displayHistory) {
+
+                showingHistory = !showingHistory;
+                updateInventoryDisplay();
+
+                // Change the menu label depending on the current screen.
+                item.setTitle(showingHistory ? "Display Inventory" : "Display Inventory History");
+
+                return true;
+            }
+            return false;
+        });
 
         databaseHelper = new DatabaseHelper(this);
         username = getIntent().getStringExtra("username");
@@ -47,6 +79,8 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         layoutInventoryItems = findViewById(R.id.layoutInventoryItems);
         buttonAddItem = findViewById(R.id.buttonAddItem);
         buttonBackHome = findViewById(R.id.buttonBackHome);
+        textInventoryTitle = findViewById(R.id.textInventoryTitle);
+        textInventorySubtitle = findViewById(R.id.textInventorySubtitle);
 
         buttonAddItem.setOnClickListener(v -> showAddDialog());
 
@@ -61,17 +95,19 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         super.onResume();
 
         if (layoutInventoryItems != null && databaseHelper != null) {
-            loadInventory();
+            updateInventoryDisplay();
         }
     }
 
     @Override
     public void onReply(Models.Reply reply) {
-        loadInventory();
+        savePendingHistory(reply);
+        updateInventoryDisplay();
     }
 
     @Override
     public void onError(String message) {
+        clearPendingHistory();
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
@@ -118,12 +154,77 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         }
     }
 
+    private void updateInventoryDisplay() {
+        // display when the user wants to see the history
+        if (showingHistory) {
+            textInventoryTitle.setText("Inventory History");
+            textInventorySubtitle.setText("Records of inventory changes");
+
+            buttonAddItem.setVisibility(View.GONE);
+
+            loadInventoryHistory();
+        } else {
+        //display when the user wants to see the inventory
+            textInventoryTitle.setText("Inventory");
+            textInventorySubtitle.setText("Manage the items in your safe");
+
+            buttonAddItem.setVisibility(View.VISIBLE);
+
+            loadInventory();
+        }
+    }
+
+    //display the history of items
+    private void loadInventoryHistory() {
+        layoutInventoryItems.removeAllViews();
+
+        Cursor cursor = databaseHelper.getInventoryHistory();
+
+        try {
+            if (!cursor.moveToFirst()) {
+                TextView emptyMessage = new TextView(this);
+                emptyMessage.setText("No inventory history yet.");
+                emptyMessage.setTextSize(16);
+                emptyMessage.setPadding(12, 20, 12, 20);
+
+                layoutInventoryItems.addView(emptyMessage);
+
+                return;
+            }
+
+            do {
+                String itemName = cursor.getString(cursor.getColumnIndexOrThrow("item_name"));
+
+                String eventUsername = cursor.getString(cursor.getColumnIndexOrThrow("username"));
+
+                String action = cursor.getString(cursor.getColumnIndexOrThrow("action"));
+
+                int quantity = cursor.getInt(cursor.getColumnIndexOrThrow("quantity_change"));
+
+                String eventTime = cursor.getString(cursor.getColumnIndexOrThrow("event_time"));
+
+                TextView historyEntry = new TextView(this);
+
+                historyEntry.setText("Item: " + itemName + "\nAction: " + action + "\nQuantity: " + quantity + "\nUser: " + eventUsername + "\nDate: " + eventTime);
+
+                historyEntry.setTextSize(15);
+                historyEntry.setPadding(16, 16, 16, 16);
+
+                layoutInventoryItems.addView(historyEntry);
+
+            } while (cursor.moveToNext());
+        } finally {
+            cursor.close();
+        }
+    }
+
     private void addInventoryRow(
             int itemId,
             String name,
             String description,
             int quantity
     ) {
+        //------------------layout specs----------------
         LinearLayout itemCard = new LinearLayout(this);
         itemCard.setOrientation(LinearLayout.VERTICAL);
         itemCard.setPadding(16, 12, 16, 12);
@@ -165,12 +266,75 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         buttonRemove.setText("Remove Quantity");
         buttonRemove.setAllCaps(false);
         itemCard.addView(buttonRemove);
+        //------------------end of layout specs----------------
 
         buttonRemove.setOnClickListener(v -> showRemoveDialog(itemId, name, quantity));
 
         layoutInventoryItems.addView(itemCard);
     }
+//-------------history code helpers---------------------
+    private void setPendingHistory(
+            String action,
+            int itemId,
+            String itemName,
+            int quantity) {
 
+        pendingHistoryAction = action;
+        pendingHistoryItemId = itemId;
+        pendingHistoryItemName = itemName;
+        pendingHistoryQuantity = quantity;
+    }
+
+
+    // Records the operation locally after the Pi confirms success.
+// TODO: Replace this SQLite history insert with a Pi history command
+// once Pi-based user accounts and shared history are implemented.
+    private void savePendingHistory(Models.Reply reply) {
+        if (pendingHistoryAction == null) {
+            return;
+        }
+        int itemId = pendingHistoryItemId;
+
+        // A newly created item may receive its ID from the server response.
+        if (itemId == -1) {
+            if (reply.item_id != null) {
+                itemId = reply.item_id;
+            } else {
+                Models.InventoryItem item = reply.asInventoryItem();
+
+                if (item != null) {
+                    itemId = item.item_id;
+                }
+            }
+        }
+        //uses the database helper version of get id incase pi doesn't work
+        if (itemId == -1) {
+            itemId = databaseHelper.getInventoryItemIdByName(pendingHistoryItemName);
+        }
+
+        String existingUsername = databaseHelper.getExistingUsername(username);
+
+        if (existingUsername != null) {
+            databaseHelper.addInventoryHistory(
+                    itemId,
+                    pendingHistoryItemName,
+                    existingUsername,
+                    pendingHistoryAction,
+                    pendingHistoryQuantity
+            );
+        } else {
+            Toast.makeText(this, "Could not find the local user for inventory history", Toast.LENGTH_SHORT).show();
+        }
+        clearPendingHistory();
+    }
+
+    private void clearPendingHistory() {
+        pendingHistoryAction = null;
+        pendingHistoryItemName = null;
+        pendingHistoryItemId = -1;
+        pendingHistoryQuantity = 0;
+    }
+    //---------------------end---------------------------
     private void showAddDialog() {
         //layout specifications
         LinearLayout dialogLayout = new LinearLayout(this);
@@ -229,6 +393,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                                         return;
                                     }
 
+                                    setPendingHistory("ADDED", -1, name, quantity); //this will be changed
 //----------USES create() from DataSync File-------------------
                                     sync.create(name, quantity);
                                     dialog.dismiss();
@@ -288,6 +453,10 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                             return;
                         }
 
+                        //for the history
+                        setPendingHistory("REMOVED", itemId, itemName, quantity);
+
+                        //uses DataSync command
                         sync.decrement(itemId, quantity);
                         dialog.dismiss();
                         loadInventory();
@@ -300,6 +469,10 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                         .setMessage("Are you sure you want to permanently delete " + itemName + "?\n\nThis action cannot be undone.")
                         .setNeutralButton("Cancel", null)
                         .setPositiveButton("Delete", (confirmDialog, which) -> {
+
+                            //for the history
+                            setPendingHistory("DELETED", itemId, itemName, currentQuantity);
+
                             //uses delete() from DataSync
                             sync.delete(itemId);
 
