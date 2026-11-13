@@ -2,11 +2,13 @@ package com.example.safeui.http_handler;
 
 import android.os.Handler;
 import android.os.Looper;
-
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
+import com.example.safeui.DatabaseHelper;
 import java.util.List;
 
 
-public class UserStore implements DataSync.LocalUsers {
+public class UserStore implements DataSync.UserLocalUsers {
 
     private static final String TABLE = "users";
 
@@ -28,7 +30,7 @@ public class UserStore implements DataSync.LocalUsers {
     }
     
     @Override
-    public void remove (int userId)
+    public void remove (int userID)
     {
         helper.getWritableDatabase().delete(
             TABLE,
@@ -42,16 +44,24 @@ public class UserStore implements DataSync.LocalUsers {
     public void replaceAll(List<Models.User> users)
     {
         SQLiteDatabase db = helper.getWritableDatabase();
+        if (users == null){
+            return; //dont know why this would happen, but just in case so it wont crash.
+        }
+
         db.beginTransaction();
 
          try
         {
             for (Models.User user : users)
             {
-                writeUser(db, user);
+                if(user != null){
+                    writeUser(db, user);
+                }
             }
 
-            // Remove users that no longer exist on the server.
+
+
+            // Remove users that no longer exist on the server
             if (users.isEmpty())
             {
                 db.delete(TABLE, null, null);

@@ -90,9 +90,9 @@ public class Commands
         return "updateUserPassword --userID " + user_id+ " --newpassword " + new_password;
     }
 
-    public static String updateUserPrivilege(int user_id, boolean isAdmin, boolean hasOpenDoorPrivilege)
+    public static String updateUserPrivileges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivileges)
     {
-        return "updateUserPrivilege --userID " + user_id + " --isAdmin " + isAdmin + "--hasOpenDoorPrivilege " + hasOpenDoorPrivilege;
+        return "updateUserPrivileges --userID " + user_id + " --isAdmin " + isAdmin + " --hasOpenDoorPrivileges " + hasOpenDoorPrivileges;
     }
 
     public static String deleteUser(int user_id)
@@ -101,9 +101,9 @@ public class Commands
     }
 
     //Not exactly sure how the return process will work for this to verify login. 
-    public static String verifyUser( int user_id, String password)
+    public static String verifyUser( String username, String password)
     {
-        return "verifyUser --userID " + user_id + " --username " + username + " --password " + password;
+        return "verifyUser --name " + username + " --password " + password;
     }
 
     // User Access History related commands
@@ -135,10 +135,10 @@ public class Commands
 
     public static String deleteAccessHistory(int access_id)
     {
-        return "deleteAccessHistory --userID " + access_id;
+        return "deleteAccessHistory --access_id " + access_id;
     }
 
-    public static Static isLocked()
+    public static String isLocked()
     {
         return "isLocked";
     }

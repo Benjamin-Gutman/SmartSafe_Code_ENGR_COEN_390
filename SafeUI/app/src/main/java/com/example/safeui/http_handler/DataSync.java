@@ -110,9 +110,9 @@ public class DataSync
         run(Commands.getUserByUsername(username));
     }
 
-    public void listUsers(String listusers)
+    public void listUsers()
     {
-        run(Commands.listUsers(listusers));
+        run(Commands.listUsers());
     }
 
     public void updateUserInfo(int user_id, String username, String email, boolean isAdmin, boolean hasOpenDoorPrivilege, String password)
@@ -125,9 +125,9 @@ public class DataSync
         run(Commands.updatePassword(user_id, new_password));
     }
 
-    public void updateUserPrivlieges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivilege)
+    public void updateUserPrivileges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivileges)
     {
-        run(Commands.updateUserPrivlieges(user_id,isAdmin,hasOpenDoorPrivilege));
+        run(Commands.updateUserPrivileges(user_id,isAdmin,hasOpenDoorPrivileges));
     }
 
     public void verifyUser(int user_id, String password)
@@ -186,52 +186,53 @@ public class DataSync
     // Forwards a successful reply to LocalStore/LocalUserStore, if one is connected.
     private void apply(Models.Reply reply)
     {
-        if (store == null || userStore == null) return;
-
         String command = reply.command == null ? "" : reply.command;
         switch (command)
         {
             //inventory related stuff
             case "list":
-                store.replaceAll(reply.asInventoryItems());
+                if (store != null){
+                    store.replaceAll(reply.asInventoryItems());
+                }
                 break;
-
             case "create":
             case "add":
             case "remove":
             case "update":
             case "get":
-                Models.InventoryItem item = reply.asInventoryItem();
-                if (item != null) store.upsert(item);
-                break;
+                if (store != null){
+                    Models.InventoryItem item = reply.asInventoryItem();
+                    if (item != null) store.upsert(item);
+                }
+                 break;
             case "delete":
-                    if (reply.item_id != null) 
+                    if (store !=null && reply.item_id != null) 
                     {
                         {store.remove(reply.item_id);}
                     }
                 break;
             //users related stuff  
             case "listUsers":
-
-                    userStore.replaceAll(reply.asUsers());
- 
+                    if( userStore !=null){
+                        userStore.replaceAll(reply.asUsers());
+                    }
                 break;
 
             case "createUser":
-            case "updateUser":
+            case "updateUserInfo":
             case "getUser":
-  
+                if( userStore !=null){
                     Models.User user = reply.asUser();
                     if (user != null)
                     {
                         userStore.upsert(user);
                     }
-      
+                }
                 break;
 
             case "deleteUser":
 
-                if (reply.user_id != null)
+                if (userStore !=null && reply.user_id != null)
                 {
                     userStore.remove(reply.user_id);
                 }
