@@ -86,7 +86,6 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
 
             showingHistory = !showingHistory;
             historyReadGeneration++;
-            item.setTitle(showingHistory ? "Display Inventory" : "Display Inventory History");
             item.setChecked(showingHistory);
             updateInventoryDisplay();
 
