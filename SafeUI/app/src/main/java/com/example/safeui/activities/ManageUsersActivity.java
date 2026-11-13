@@ -28,14 +28,8 @@ public class ManageUsersActivity extends AppCompatActivity {
         databaseHelper = new DatabaseHelper(this);
 
         // Only administrators may access this screen.
-        if (adminUsername == null
-                || !databaseHelper.isAdmin(adminUsername)) {
-
-            Toast.makeText(
-                    this,
-                    "Administrator access required.",
-                    Toast.LENGTH_LONG
-            ).show();
+        if (adminUsername == null || !databaseHelper.isAdmin(adminUsername)) {
+            Toast.makeText(this, "Administrator access required.", Toast.LENGTH_LONG).show();
 
             finish();
             return;
@@ -65,6 +59,7 @@ public class ManageUsersActivity extends AppCompatActivity {
                     continue;
                 }
 
+ //--------------don't need to touch this, it's just creating the layout-------------
                 LinearLayout row = new LinearLayout(this);
                 row.setOrientation(LinearLayout.VERTICAL);
                 row.setPadding(16, 12, 16, 12);
@@ -100,16 +95,14 @@ public class ManageUsersActivity extends AppCompatActivity {
                 permission.setTextColor(0xFF202020);
                 permission.setChecked(canOpenSafe);
                 row.addView(permission);
+//-----------------------------------------------------------------
 
+                //check mark button to give safe permissions
                 permission.setOnCheckedChangeListener(
                         (button, checked) -> {
                             button.setEnabled(false);
 
-                            boolean success =
-                                    databaseHelper.setSafeAccess(
-                                            userId,
-                                            checked
-                                    );
+                            boolean success = databaseHelper.setSafeAccess(userId, checked);
 
                             if (!success) {
                                 // Temporarily remove the listener so
@@ -118,62 +111,42 @@ public class ManageUsersActivity extends AppCompatActivity {
                                 button.setOnCheckedChangeListener(null);
                                 button.setChecked(!checked);
 
-                                Toast.makeText(
-                                        this,
-                                        "Could not update permission.",
-                                        Toast.LENGTH_SHORT
-                                ).show();
+                                Toast.makeText(this, "Could not update permission.", Toast.LENGTH_SHORT).show();
 
-                                button.setOnCheckedChangeListener(
-                                        (changedButton, newChecked) ->
-                                                updatePermission((CheckBox)changedButton, userId, newChecked)
-                                );
+                                button.setOnCheckedChangeListener((changedButton, newChecked) -> updatePermission((CheckBox)changedButton, userId, newChecked));
                             } else {
-                                Toast.makeText(
-                                        this,
-                                        checked
-                                                ? "Safe access granted."
-                                                : "Safe access revoked.",
-                                        Toast.LENGTH_SHORT
-                                ).show();
+                                Toast.makeText(this, checked ? "Safe access granted." : "Safe access revoked.", Toast.LENGTH_SHORT).show();
                             }
-
                             button.setEnabled(true);
                         }
                 );
-
                 userList.addView(row);
             }
 
         } catch (Exception e) {
-            Toast.makeText(
-                    this,
-                    "Could not load user accounts.",
-                    Toast.LENGTH_LONG
-            ).show();
+            Toast.makeText(this, "Could not load user accounts.", Toast.LENGTH_LONG).show();
         }
 
         if (userList.getChildCount() == 0) {
             TextView emptyMessage = new TextView(this);
-            emptyMessage.setText(
-                    "No other user accounts have been created yet."
-            );
+            emptyMessage.setText("No other user accounts have been created yet.");
+//----------------------Layout --------------------------------------------------
             emptyMessage.setTextSize(16);
             emptyMessage.setTextColor(0xFF666666);
             emptyMessage.setPadding(16, 20, 16, 20);
 
-            LinearLayout.LayoutParams emptyParams =
-                    new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams emptyParams = new LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.MATCH_PARENT,
                             LinearLayout.LayoutParams.WRAP_CONTENT
                     );
 
             emptyParams.setMargins(12, 0, 12, 12);
-
+//-----------------------------------------------------------------------------
             userList.addView(emptyMessage, emptyParams);
         }
     }
 
+    //update permission implementation
     private void updatePermission(
             CheckBox button,
             int userId,
@@ -185,35 +158,16 @@ public class ManageUsersActivity extends AppCompatActivity {
                 userId,
                 checked
         );
-
         if (!success) {
             button.setOnCheckedChangeListener(null);
             button.setChecked(!checked);
 
-            Toast.makeText(
-                    this,
-                    "Could not update permission.",
-                    Toast.LENGTH_SHORT
-            ).show();
+            Toast.makeText(this, "Could not update permission.", Toast.LENGTH_SHORT).show();
 
-            button.setOnCheckedChangeListener(
-                    (changedButton, newChecked) ->
-                            updatePermission(
-                                    (CheckBox)changedButton,
-                                    userId,
-                                    newChecked
-                            )
-            );
+            button.setOnCheckedChangeListener((changedButton, newChecked) -> updatePermission((CheckBox)changedButton, userId, newChecked));
         } else {
-            Toast.makeText(
-                    this,
-                    checked
-                            ? "Safe access granted."
-                            : "Safe access revoked.",
-                    Toast.LENGTH_SHORT
-            ).show();
+            Toast.makeText(this, checked ? "Safe access granted." : "Safe access revoked.", Toast.LENGTH_SHORT).show();
         }
-
         button.setEnabled(true);
     }
 }

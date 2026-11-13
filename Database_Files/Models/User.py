@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+from Database import Base
 
-class User(Base):
+class UserModel(Base):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True, autoincrement=True)

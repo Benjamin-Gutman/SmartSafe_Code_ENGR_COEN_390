@@ -58,16 +58,20 @@ public class Commands
     }
 
     // User commands
-    public static String createUser(String username, String email)
-    {
-        
-        return "createUser --name " + username + " --email " + email;
-      
-    }
+//    public static String createUser(String username, String email,  String password)
+//    {
+//        // if its first user created( not sure if the table will exist yet at this point so will take into account if its null)
+//        //otherwise will by default set Admin/opendoorpriviledges as False. (FYI its written priviledges, but for some reason its written as privileges in the code)
+//        if (databaseHelper.listUsers().length == 0 || databaseHelper.listUsers().length == null) {
+//            return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin True --hasOpenDoorPrivileges False";
+//        }else{
+//            return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin False --hasOpenDoorPrivileges False";
+//        }
+//    }
 
     public static String getUserByID(int user_id)
     {
-        return "getUserByID " + user_id;
+        return "getUser " + user_id;
     }
 
     public static String getUserByUsername(String username)
@@ -82,35 +86,35 @@ public class Commands
 
     public static String updateUserInfo(int user_id, String username, String email, boolean isAdmin, boolean hasOpenDoorprivilege, String password)
     {
-        return "updateUserInfo --user_id "+ user_id+ " --username " + username + " --email " + email + " --isAdmin " +isAdmin + " --hasOpenDoorprivilege " + hasOpenDoorprivilege + " --password " +password;
+        return "updateUserInfo --userID "+ user_id+ " --username " + username + " --email " + email + " --isAdmin " +isAdmin + " --hasOpenDoorprivilege " + hasOpenDoorprivilege + " --password " +password;
     }
 
     public static String updatePassword(int user_id, String new_password)
     {
-        return "updatePassword --user_id " + user_id+ " --newpassword " + new_password;
+        return "updateUserPassword --userID " + user_id+ " --newpassword " + new_password;
     }
 
     public static String updateUserPrivileges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivilege)
     {
-        return "updateUserPrivileges --user_id " + user_id + " --isAdmin " + isAdmin + " --hasOpenDoorPrivilege " + hasOpenDoorPrivilege;
+        return "updateUserPrivileges --userID " + user_id + " --isAdmin " + isAdmin + "--hasOpenDoorPrivliege " + hasOpenDoorPrivilege;
     }
 
     public static String deleteUser(int user_id)
     {
-        return "deleteUser --user_id " +user_id;
+        return "deleteUser --userID " +user_id;
     }
 
     //Not exactly sure how the return process will work for this to verify login. 
-    public static String verifyUser( String username, String password)
-    {
-        return "verifyUser --name " + username + " --password " + password;
-    }
+//    public static String verifyUser( int user_id, String password)
+//    {
+//        return "verifyUser --userID " + user_id + " --username " + username + " --password " + password;
+//    }
 
     // User Access History related commands
 
     public static String createAccess(int user_id, String changes_made, String timestamp)
     {
-        return "createAccess --user_id " + user_id + " --changes_made " + changes_made + " --timestamp " + timestamp;
+        return "createAccess --userID " + user_id + " --changes_made " + changes_made + " --timestamp " + timestamp;
     }
 
     public static String getAccessHistory(int access_id)
@@ -120,27 +124,22 @@ public class Commands
 
     public static String listAccessHistory()
     {
-        return "getAccessHistory";
+        return "listAccessHistory";
     }
 
     public static String updateAccessHistory(int access_id, int user_id, String changes_made, String timestamp)
     {
-        return "updateAccessHistory --access_id " + access_id + " --user_id " + user_id + " --changes_made "+ changes_made+ " --timestamp " + timestamp;
+        return "updateAccessHistory --access " + access_id + " --user_id " + user_id + " --changes_made "+ changes_made+ " --timestamp " + timestamp;
     }
 
     public static String getAccessHistoryByUser(int user_id)
     {
-        return "getAccessHistoryByUser --user_id " + user_id;
+        return "getAccessHistoryByUser --userID " + user_id;
     }
 
     public static String deleteAccessHistory(int access_id)
     {
-        return "deleteAccessHistory --access_id " + access_id;
-    }
-
-    public static String isLocked()
-    {
-        return "isLocked";
+        return "deleteAccessHistory --userID " + access_id;
     }
 
 
