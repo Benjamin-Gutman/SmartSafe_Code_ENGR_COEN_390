@@ -67,7 +67,7 @@ public class Commands
 
     public static String getUserByID(int user_id)
     {
-        return "getUser " + user_id;
+        return "getUserByID " + user_id;
     }
 
     public static String getUserByUsername(String username)
@@ -82,22 +82,22 @@ public class Commands
 
     public static String updateUserInfo(int user_id, String username, String email, boolean isAdmin, boolean hasOpenDoorprivilege, String password)
     {
-        return "updateUserInfo --userID "+ user_id+ " --username " + username + " --email " + email + " --isAdmin " +isAdmin + " --hasOpenDoorprivilege " + hasOpenDoorprivilege + " --password " +password;
+        return "updateUserInfo --user_id "+ user_id+ " --username " + username + " --email " + email + " --isAdmin " +isAdmin + " --hasOpenDoorprivilege " + hasOpenDoorprivilege + " --password " +password;
     }
 
     public static String updatePassword(int user_id, String new_password)
     {
-        return "updateUserPassword --userID " + user_id+ " --newpassword " + new_password;
+        return "updatePassword --user_id " + user_id+ " --newpassword " + new_password;
     }
 
     public static String updateUserPrivileges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivilege)
     {
-        return "updateUserPrivileges --userID " + user_id + " --isAdmin " + isAdmin + " --hasOpenDoorPrivilege " + hasOpenDoorPrivilege;
+        return "updateUserPrivileges --user_id " + user_id + " --isAdmin " + isAdmin + " --hasOpenDoorPrivilege " + hasOpenDoorPrivilege;
     }
 
     public static String deleteUser(int user_id)
     {
-        return "deleteUser --userID " +user_id;
+        return "deleteUser --user_id " +user_id;
     }
 
     //Not exactly sure how the return process will work for this to verify login. 
@@ -110,7 +110,7 @@ public class Commands
 
     public static String createAccess(int user_id, String changes_made, String timestamp)
     {
-        return "createAccess --userID " + user_id + " --changes_made " + changes_made + " --timestamp " + timestamp;
+        return "createAccess --user_id " + user_id + " --changes_made " + changes_made + " --timestamp " + timestamp;
     }
 
     public static String getAccessHistory(int access_id)
@@ -120,17 +120,17 @@ public class Commands
 
     public static String listAccessHistory()
     {
-        return "listAccessHistory";
+        return "getAccessHistory";
     }
 
     public static String updateAccessHistory(int access_id, int user_id, String changes_made, String timestamp)
     {
-        return "updateAccessHistory --access " + access_id + " --user_id " + user_id + " --changes_made "+ changes_made+ " --timestamp " + timestamp;
+        return "updateAccessHistory --access_id " + access_id + " --user_id " + user_id + " --changes_made "+ changes_made+ " --timestamp " + timestamp;
     }
 
     public static String getAccessHistoryByUser(int user_id)
     {
-        return "getAccessHistoryByUser --userID " + user_id;
+        return "getAccessHistoryByUser --user_id " + user_id;
     }
 
     public static String deleteAccessHistory(int access_id)
