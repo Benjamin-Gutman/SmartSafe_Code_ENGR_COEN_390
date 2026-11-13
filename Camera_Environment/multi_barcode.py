@@ -1,15 +1,25 @@
 import cv2
+from picamera2 import Picamera2
 from pyzbar.pyzbar import decode
+from libcamera import controls
 
-cap = cv2.VideoCapture(0)
+print("Program Started")
 
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+picam2 = Picamera2()
+picam2.configure(picam2.create_preview_configuration(main = {"size": (1920, 1080),"format":"RGB888"}))
+picam2.start()
+picam2.set_controls({"AfMode": controls.AfModeEnum.Continuous})
+print("camera initialized")
+
+
 
 while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+    frame = picam2.capture_array()
+    
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    clahe = cv2.createCLAHE( clipLimit=2.0,tileGridSize=(8,8))
+    threshold = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,31,5)
 
     barcodes = decode(frame)
 
@@ -29,6 +39,20 @@ while True:
             0.5,
             (0, 255, 0),
             2,
+        )
+        
+        text = f"{barcode_data} ({barcode_type})"
+        
+        print(text)
+        
+        cv2.putText(
+            frame,
+            text,
+            (x,y-10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0,255,0),
+            2
         )
 
     cv2.imshow("Barcode Scanner", frame)

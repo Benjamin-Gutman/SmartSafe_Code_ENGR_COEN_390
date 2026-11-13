@@ -36,9 +36,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Only show Manage Users to administrators.
         boolean isAdmin = databaseHelper.isAdmin(username);
-
         buttonManageUsers.setVisibility(isAdmin ? android.view.View.VISIBLE : android.view.View.GONE);
 
+        //Inventory button
         buttonInventory.setOnClickListener(v -> {Intent intent = new Intent(MainActivity.this, InventoryActivity.class);
             intent.putExtra("username", username);
             startActivity(intent);
@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
         buttonUserHistory.setOnClickListener(v -> Toast.makeText(this, "User history screen coming next.", Toast.LENGTH_SHORT).show());
 
+        //Open safe button
         buttonOpenSafe.setOnClickListener(v -> {if (databaseHelper.isAdmin(username) || databaseHelper.hasSafeAccess(username)) {
                 Toast.makeText(this, "Access authorized. Safe hardware " + "control will be added later.", Toast.LENGTH_LONG).show();
             } else {
@@ -53,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //Manage user button
         buttonManageUsers.setOnClickListener(v -> {
             if (databaseHelper.isAdmin(username)) {
                 Intent intent = new Intent(MainActivity.this, ManageUsersActivity.class);
@@ -65,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
         buttonAccount.setOnClickListener(v -> showAccountDialog());
     }
 
+    //account button + sign out dialog
     private void showAccountDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Account")
@@ -76,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                 })
-                .setNegativeButton("Close", null)
+                .setNeutralButton("Close", null)
                 .show();
     }
 }

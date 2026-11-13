@@ -22,6 +22,18 @@ public class Models
         public int quantity;
     }
 
+    public static class User
+    {
+        public String username;
+        public String email;
+        public boolean isAdmin;
+        public boolean hasOpenDoorPrivilege;
+        public int user_id;
+        public String hashed_password; // not sure if i need to include this here
+    }
+
+
+    // For response received from server.
     public static class Reply
     {
         public String status;
@@ -29,7 +41,9 @@ public class Models
         public String message; // For error messages
         public JsonElement inventory;
         public JsonElement history;
-        public Integer item_id;
+        public JsonElement users;
+        public Integer item_id; // Not sure why its here, but will keep just in case for now
+    
 
         public boolean isOk()
         {
@@ -55,5 +69,38 @@ public class Models
             }
             return GSON.fromJson(inventory, new TypeToken<List<InventoryItem>>(){}.getType());
         }
+
+        //Will do like inventory where option to return 1 user and then multiple users
+//        public User asUser()
+//        {
+//            if (user == null || !user.isJsonObject())
+//            {
+//                return null;
+//            }
+//            return GSON.fromJson(user, user.class);
+//
+//
+//
+//        }
+//
+//        public List<User> asUsers()
+//        {
+//            if(users = null ||!users.isJsonArray())
+//            {
+//                return new ArrayList();
+//            }
+//            return GSON.fromJson(users, new TypeToken<List<User>>(){}.getType());
+//        }
+//
+
+
     }
+
+    
+
+
+
+
+
+
 }

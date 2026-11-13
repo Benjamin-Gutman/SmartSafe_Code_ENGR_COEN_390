@@ -296,4 +296,5 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "item_name COLLATE NOCASE ASC"
         );
     }
+
 }
