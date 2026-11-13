@@ -93,8 +93,9 @@ class Safe:
 
         # Check if unlocked (either unlocked and closed or open)
         is_unlocked = state in (UNLOCKED, OPEN)
-
-        self.pins.set(config.LOCK, is_unlocked)
+        is_locked = not is_unlocked
+        
+        self.pins.set(config.LOCK, is_locked)
         self.pins.set(config.BUZZER, False)
         self.pins.set(config.RED_LED, False)
 
