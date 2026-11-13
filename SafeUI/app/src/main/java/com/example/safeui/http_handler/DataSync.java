@@ -125,9 +125,9 @@ public class DataSync
         run(Commands.updatePassword(user_id, new_password));
     }
 
-    public void updateUserPrivileges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivileges)
+    public void updateUserPrivileges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivilege)
     {
-        run(Commands.updateUserPrivileges(user_id,isAdmin,hasOpenDoorPrivileges));
+        run(Commands.updateUserPrivileges(user_id,isAdmin,hasOpenDoorPrivilege));
     }
 
     public void verifyUser(int user_id, String password)

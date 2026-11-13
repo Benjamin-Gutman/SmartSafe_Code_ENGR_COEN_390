@@ -90,9 +90,9 @@ public class Commands
         return "updateUserPassword --userID " + user_id+ " --newpassword " + new_password;
     }
 
-    public static String updateUserPrivileges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivileges)
+    public static String updateUserPrivileges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivilege)
     {
-        return "updateUserPrivileges --userID " + user_id + " --isAdmin " + isAdmin + " --hasOpenDoorPrivileges " + hasOpenDoorPrivileges;
+        return "updateUserPrivileges --userID " + user_id + " --isAdmin " + isAdmin + " --hasOpenDoorPrivilege " + hasOpenDoorPrivilege;
     }
 
     public static String deleteUser(int user_id)
