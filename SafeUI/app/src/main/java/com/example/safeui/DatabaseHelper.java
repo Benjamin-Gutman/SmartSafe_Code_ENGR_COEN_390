@@ -16,7 +16,9 @@ import java.util.Locale;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "SafeInventory.db";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
+
+    public static final String INVENTORY_HISTORY_CACHE = "inventory_history_cache";
 
     private static final String USERS_TABLE = "users";
 
@@ -56,6 +58,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         "event_time TEXT NOT NULL)"
         );
 
+        createInventoryHistoryCache(db);
+    }
+
+    // A separate server cache preserves the older local-history table and its data.
+    // There is no foreign key to inventory: history must survive item deletion.
+    private void createInventoryHistoryCache(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + INVENTORY_HISTORY_CACHE + " (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "item_id INTEGER NOT NULL, " +
+                "item_name TEXT NOT NULL, " +
+                "quantity INTEGER NOT NULL, " +
+                "action TEXT NOT NULL, " +
+                "timestamp TEXT NOT NULL, " +
+                "timestamp_micros INTEGER NOT NULL, " +
+                "source_order INTEGER NOT NULL, " +
+                "quantity_change INTEGER)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS inventory_history_cache_item_time ON " +
+                INVENTORY_HISTORY_CACHE + " (item_id, timestamp_micros)");
     }
 
     //added a default user on version 2
@@ -101,6 +121,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                             "description TEXT NOT NULL DEFAULT '', " +
                             "quantity INTEGER NOT NULL DEFAULT 0 CHECK(quantity >= 0))"
             );
+        }
+        if (oldVersion < 5) {
+            createInventoryHistoryCache(db);
         }
     }
 
@@ -296,5 +319,4 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "item_name COLLATE NOCASE ASC"
         );
     }
-
 }
