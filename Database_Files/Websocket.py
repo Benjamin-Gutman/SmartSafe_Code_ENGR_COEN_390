@@ -32,7 +32,10 @@ def syncStatus(): #sync doorStatus with HW program
     with connect("ws://localhost:8766") as websocket:
         websocket.send("status")
         response = websocket.recv()
-        state = {k: v.lower() == "true" for k, v in re.findall(r"(\w+)\s*:\s*(\w+)", response)}
+
+        state = json.loads(response)
+
+       # state = {k: v.lower() == "true" for k, v in re.findall(r"(\w+)\s*:\s*(\w+)", response)}
         doorStatus.isLocked = state["locked"]
         doorStatus.isOpen = state["open"]
         doorStatus.alarm = state["alarm"]
@@ -286,8 +289,9 @@ async def main(host: str, port: int) -> None:
         print(f"Inventory websocket listening on ws://{host}:{port}")
         await asyncio.Future()  # run forever
 
-#syncStatus() #only run when testing with HW program
+
 try:
+    # syncStatus() #only run when testing with HW program
     asyncio.run(main("0.0.0.0", 8765))
 except KeyboardInterrupt:
     print("Server stopped")
