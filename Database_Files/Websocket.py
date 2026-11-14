@@ -231,11 +231,16 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
 #--------------------------------------------------------------------
 #HW management part (NOT COMPLETE)
 #--------------------------------------------------------------------
+
+#HW communication
         if cmd == "giveStatus": #will be changed later when scanning is implemented
             doorStatus.isLocked = args.isLocked
             doorStatus.isOpen = args.isOpen
             doorStatus.alarm = args.alarm
             return ok(cmd, message="status updated")
+    
+#Android comunication
+
 
         if cmd == "getStatus":
             return ok(cmd, doorStatus=status_to_dict(doorStatus))
