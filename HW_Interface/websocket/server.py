@@ -6,7 +6,7 @@ import json
 import logging
 import socket
 
-import command_helper
+from command_helper import build_reply
 import config
 
 log = logging.getLogger("hw")
@@ -44,7 +44,7 @@ class Server:
         match name:
 
             case "status":
-                self._reply(client, command_helper.build_reply(self.safe.status()))
+                self._reply(client, build_reply(self.safe.status()))
             case "unlock":
                 self.safe.unlock("User") # Left generic for now
             case "lock":

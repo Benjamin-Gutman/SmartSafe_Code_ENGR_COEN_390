@@ -4,7 +4,7 @@ import queue
 import socket
 import threading
 
-import command_helper
+from command_helper import build_command
 import config
 
 log = logging.getLogger("hw")
@@ -21,7 +21,7 @@ class Client:
     def send_event(self, event, status):
         """ Call this from notify(). Returns immediately """
 
-        command = command_helper.build_command(event, status)
+        command = build_command(event, status)
 
         if command is None:
             log.warning("no command defined for event: %s", event)
