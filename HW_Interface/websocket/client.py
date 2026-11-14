@@ -1,10 +1,12 @@
 import json
 import logging
 import queue
-import socket
 import threading
 
-from command_helper import build_command
+from websockets.exceptions import WebSocketException
+from websockets.sync.client import connect
+
+from .command_helper import build_command
 import config
 
 log = logging.getLogger("hw")
@@ -44,16 +46,16 @@ class Client:
                 reply = self._send(command)
 
                 log.info("reply: %s", reply)
-            except (OSError, ValueError) as error:
+            except (OSError, ValueError, WebSocketException) as error:
                 log.warning("could not send '%s': %s", command, error)
 
     def _send(self, command):
-        """ Connects, sends one command line, reads one JSON reply line, and disconnects """
+        """ Connects, sends one command, reads one JSON reply, and disconnects """
 
-        with socket.create_connection((config.BACKEND_HOST, config.BACKEND_HOST), timeout=config.CLIENT_TIMEOUT_SECONDS) as sock:
-            
-            sock.sendall((command + "\n").encode())
- 
-            line = sock.makefile("r").readline()
+        url = f"ws://{config.BACKEND_HOST}:{config.BACKEND_PORT}"
+
+        with connect(url, open_timeout=config.CLIENT_TIMEOUT_SECONDS) as ws:
+            ws.send(command)
+            line = ws.recv(timeout=config.CLIENT_TIMEOUT_SECONDS)
 
         return json.loads(line)               # raises ValueError if the reply was empty or not JSON
