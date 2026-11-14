@@ -215,6 +215,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         }
     }
 
+    //---------Inventory History functions
     private void loadInventoryHistory() {
         layoutInventoryItems.removeAllViews();
         final int generation = ++historyReadGeneration;
@@ -244,8 +245,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         });
     }
 
-    private void displayInventoryHistory(List<Models.InventoryHistoryItem> events,
-                                         List<InventoryHistoryStore.LegacyHistoryItem> legacy) {
+    private void displayInventoryHistory(List<Models.InventoryHistoryItem> events, List<InventoryHistoryStore.LegacyHistoryItem> legacy) {
         layoutInventoryItems.removeAllViews();
 
         if (events.isEmpty() && legacy.isEmpty()) {
@@ -262,46 +262,79 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             // A delete event retains the last stock value; it does not prove
             // the physical stock became zero. Other events show remaining stock.
             String quantityLabel = "delete".equals(event.action)
-                    ? "Last recorded quantity: "
-                    : "Remaining quantity: ";
+                    ? "Last recorded quantity: " : "Remaining quantity: ";
 
-            TextView historyEntry = new TextView(this);
-            historyEntry.setText(
-                    "Item: " + event.item_name
-                            + "\nUser: " + historyUsername(event.username)
-                            + "\nAction: " + historyActionLabel(event.action)
-                            + "\n" + quantityLabel + event.quantity
-                            + "\nDate: " + dates.format(new Date(event.getTimestampMillis())));
-            historyEntry.setTextSize(15);
-            historyEntry.setTextColor(0xFF202124);
-            historyEntry.setPadding(16, 16, 16, 16);
-            layoutInventoryItems.addView(historyEntry);
+            addHistoryCard(
+                    event.item_name,
+                    historyUsername(event.username),
+                    historyActionLabel(event.action),
+                    quantityLabel + event.quantity,
+                    "Date: " +dates.format(new Date(event.getTimestampMillis()))
+                    );
         }
 
         if (!legacy.isEmpty()) {
-            TextView heading = new TextView(this);
-            heading.setText("Previous records on this phone");
-            heading.setTextSize(18);
-            heading.setPadding(16, 24, 16, 8);
-            layoutInventoryItems.addView(heading);
 
-            // Older records contain a local time and an entered amount. Do not
-            // invent a UTC time or copy that amount into remaining quantity.
             for (InventoryHistoryStore.LegacyHistoryItem event : legacy) {
-                TextView historyEntry = new TextView(this);
-                historyEntry.setText(
-                        "Item: " + event.item_name
-                                + "\nUser: " + historyUsername(event.username)
-                                + "\nAction: " + historyActionLabel(event.action)
-                                + "\nRecorded amount: " + event.quantity_change
-                                + "\nRemaining quantity: Unknown"
-                                + "\nDate recorded on phone: " + event.event_time);
-                historyEntry.setTextSize(15);
-                historyEntry.setTextColor(0xFF202124);
-                historyEntry.setPadding(16, 16, 16, 16);
-                layoutInventoryItems.addView(historyEntry);
+                addHistoryCard(
+                        event.item_name,
+                        historyUsername(event.username),
+                        historyActionLabel(event.action),
+                        "Recorded amount: " + event.quantity_change + "\nRemaining quantity: Unknown",
+                        "Date: " + event.event_time);
             }
         }
+    }
+
+    private void addHistoryCard(
+            String itemName,
+            String username,
+            String action,
+            String quantity,
+            String date
+    ) {
+        //Card layout
+        LinearLayout historyCard = new LinearLayout(this);
+        historyCard.setOrientation(LinearLayout.VERTICAL);
+        historyCard.setPadding(16,12,16,12);
+        historyCard.setBackgroundColor(0xFFFFFFFF);
+
+        //Card dimensions and spacing
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+
+        cardParams.setMargins(0,0,0,12);
+        historyCard.setLayoutParams(cardParams);
+
+        //item name
+        TextView textName = new TextView(this);
+        textName.setText(itemName);
+        textName.setTextSize(18);
+        textName.setTextColor(0xFF202124);
+        textName.setTypeface(null, android.graphics.Typeface.BOLD);
+        historyCard.addView(textName);
+
+        //user
+        addHistoryDetail(historyCard, "User: " + username);
+        //Action
+        addHistoryDetail(historyCard, "Action: " + action);
+        //Quantity
+        addHistoryDetail(historyCard, quantity);
+        //Date
+        addHistoryDetail(historyCard, date);
+
+        layoutInventoryItems.addView(historyCard);
+    }
+
+    private void addHistoryDetail(LinearLayout card, String text) {
+        TextView detail = new TextView(this);
+        detail.setText(text);
+        detail.setTextSize(15);
+        detail.setTextColor(0xFF333333);
+        detail.setPadding(0, 8, 0, 4);
+
+        card.addView(detail);
     }
 
     private String historyUsername(String username) {
@@ -325,30 +358,8 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        destroyed = true;
-        historyReadGeneration++;
-        closeDatabaseWhenIdle();
-        super.onDestroy();
-    }
 
-    private void closeDatabaseWhenIdle() {
-        if (!destroyed || requestInFlight || databaseClosing) {
-            return;
-        }
-
-        // Wait for a pending DataSync write and any queued history reads before
-        // closing the helper. Network callbacks arrive after their cache write.
-        databaseClosing = true;
-        historyReader.execute(() -> {
-            if (databaseHelper != null) {
-                databaseHelper.close();
-            }
-        });
-        historyReader.shutdown();
-    }
-
+    //--------------------------Inventory Functions--------------------------
     private void loadInventory() {
         layoutInventoryItems.removeAllViews();
 
@@ -415,15 +426,15 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         textName.setTextColor(0xFF202124);
         textName.setTypeface(null, android.graphics.Typeface.BOLD);
         itemCard.addView(textName);
-
-        if (description != null && !description.trim().isEmpty()) {
-            TextView textDescription = new TextView(this);
-            textDescription.setText(description);
-            textDescription.setTextSize(14);
-            textDescription.setTextColor(0xFF666666);
-            textDescription.setPadding(0, 4, 0, 4);
-            itemCard.addView(textDescription);
-        }
+//pi doesn't handle description yet so this is useless
+//        if (description != null && !description.trim().isEmpty()) {
+//            TextView textDescription = new TextView(this);
+//            textDescription.setText(description);
+//            textDescription.setTextSize(14);
+//            textDescription.setTextColor(0xFF666666);
+//            textDescription.setPadding(0, 4, 0, 4);
+//            itemCard.addView(textDescription);
+//        }
 
         TextView textQuantity = new TextView(this);
         textQuantity.setText("Quantity: " + quantity);
@@ -637,5 +648,29 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             });
         });
         dialog.show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        destroyed = true;
+        historyReadGeneration++;
+        closeDatabaseWhenIdle();
+        super.onDestroy();
+    }
+
+    private void closeDatabaseWhenIdle() {
+        if (!destroyed || requestInFlight || databaseClosing) {
+            return;
+        }
+
+        // Wait for a pending DataSync write and any queued history reads before
+        // closing the helper. Network callbacks arrive after their cache write.
+        databaseClosing = true;
+        historyReader.execute(() -> {
+            if (databaseHelper != null) {
+                databaseHelper.close();
+            }
+        });
+        historyReader.shutdown();
     }
 }
