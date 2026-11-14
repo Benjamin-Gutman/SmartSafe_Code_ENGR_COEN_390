@@ -29,7 +29,7 @@ doorStatus = Status()
 
 def syncStatus(): #sync doorStatus with HW program
     # Establish a persistent connection to the server
-    with connect("ws://localhost:8765") as websocket:
+    with connect("ws://localhost:8766") as websocket:
         websocket.send("status")
         response = websocket.recv()
         state = {k: v.lower() == "true" for k, v in re.findall(r"(\w+)\s*:\s*(\w+)", response)}
