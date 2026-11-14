@@ -255,7 +255,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             sendHW("lock")
             return ok(cmd, message="command sent")
 
-        if cmd == "unlockDoor":
+        if cmd == "unlockDoor": #will require user_id later
             sendHW("unlock")
             return ok(cmd, message="command sent")
         

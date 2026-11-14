@@ -156,6 +156,7 @@ def build_command_parser() -> SocketArgumentParser:
     p = sub.add_parser("lockDoor", help= "lock the safe", formatter_class=argparse.RawTextHelpFormatter)
 
     p = sub.add_parser("unlockDoor", help= "unlock the safe ", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--user_id" )
 
 
     sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)
