@@ -366,11 +366,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         itemCard.setPadding(16, 12, 16, 12);
         itemCard.setBackgroundColor(0xFFFFFFFF);
 
-        LinearLayout.LayoutParams cardParams =
-                new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
-                );
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 
         cardParams.setMargins(0, 0, 0, 12);
         itemCard.setLayoutParams(cardParams);
@@ -398,12 +394,18 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         textQuantity.setPadding(0, 8, 0, 4);
         itemCard.addView(textQuantity);
 
+        Button buttonAdd = new Button(this);
+        buttonAdd.setText("Add Quantity");
+        buttonAdd.setAllCaps(false);
+        itemCard.addView(buttonAdd);
+
         Button buttonRemove = new Button(this);
         buttonRemove.setText("Remove Quantity");
         buttonRemove.setAllCaps(false);
         itemCard.addView(buttonRemove);
-        //------------------end of layout specs----------------
 
+        //------------------end of layout specs----------------
+        buttonAdd.setOnClickListener(v -> showAddQuantityDialog(itemId, name));
         buttonRemove.setOnClickListener(v -> showRemoveDialog(itemId, name, quantity));
 
         layoutInventoryItems.addView(itemCard);
@@ -476,6 +478,46 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
 
                                 })
         );
+        dialog.show();
+    }
+
+    private void showAddQuantityDialog(int itemId, String itemName){
+        EditText editQuantity = new EditText(this);
+        editQuantity.setHint("Quantity to add");
+        editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+
+        //diialog that appears when "Add" item is clicked
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle ("Add quantity to " + itemName)
+                .setView (editQuantity)
+                .setNeutralButton("Cancel", null)
+                .setPositiveButton("Add",null)
+                .create();
+
+        //Implement add button
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v-> {
+                    int quantity;
+
+                    try {
+                        quantity = Integer.parseInt(editQuantity.getText().toString().trim()
+                        );
+                    } catch (NumberFormatException e) {
+                        editQuantity.setError("Enter a valid quantity.");
+                        return;
+                    }
+
+                    if (quantity <= 0) {
+                        editQuantity.setError("Enter a quantity greater than zero.");
+                        return;
+                    }
+
+                    if(!beginInventoryRequest("Quantity added.")){
+                        return;
+                    }
+                    sync.increment(itemId, quantity);
+                    dialog.dismiss();
+                }));
         dialog.show();
     }
 
