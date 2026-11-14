@@ -4,7 +4,7 @@ import queue
 import socket
 import threading
 
-from command_helper import build_command
+from .command_helper import build_command
 import config
 
 log = logging.getLogger("hw")

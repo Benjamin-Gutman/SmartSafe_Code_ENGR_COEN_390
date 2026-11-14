@@ -6,7 +6,7 @@ import json
 import logging
 import socket
 
-from command_helper import build_reply
+from .command_helper import build_reply
 import config
 
 log = logging.getLogger("hw")
