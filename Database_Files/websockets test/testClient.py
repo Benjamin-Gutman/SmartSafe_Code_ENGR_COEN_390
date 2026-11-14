@@ -10,7 +10,9 @@ def run_client():
         #websocket.send("verifyUser --name go --password admin132")
         #websocket.send("listUsers")
 
-        websocket.send("giveStatus -isLocked true -isOpen false -alarm false")
+        #websocket.send("giveStatus -isLocked true -isOpen false -alarm false")
+        websocket.send("getStatus")
+        
         
         # Await the response from the server
         response = websocket.recv()

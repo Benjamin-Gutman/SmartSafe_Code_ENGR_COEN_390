@@ -142,12 +142,22 @@ def build_command_parser() -> SocketArgumentParser:
 #--------------------------------------------------------------------
 #HW management part (NOT COMPLETE)
 #--------------------------------------------------------------------
+
+#HW communication
     p = sub.add_parser("giveStatus", help= "give save status", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("-isLocked", type=str2bool, required=True)
     p.add_argument("-isOpen", type=str2bool)
     p.add_argument("-alarm", type=str2bool)
 
-    
+
+#Android comunication
+    p = sub.add_parser("getStatus", help= "give save status", formatter_class=argparse.RawTextHelpFormatter)
+
+    p = sub.add_parser("lockDoor", help= "lock the safe", formatter_class=argparse.RawTextHelpFormatter)
+
+    p = sub.add_parser("unlockDoor", help= "unlock the safe ", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--user_id" )
+
 
     sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)
     return parser
