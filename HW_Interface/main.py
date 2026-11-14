@@ -8,7 +8,9 @@ import debug_commands
 from safe_state_machine import Safe
 from loop import Loop
 from hw_drivers.gpio import Pins
- 
+from websocket.client import Client
+from websocket.server import Server
+
 log = logging.getLogger("hw")
 
 
@@ -27,18 +29,19 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
     loop = Loop()
- 
-    # -- Create your hardware objects here -- #
-    pins = Pins()
-
-
+  
+    
     # -- Create safe state machine object and pass it the notify function -- #
     def notify(event, **details):
         """ Passed to state machine to notify on event change. May also call server specific commands """     
         log.info("event: %s %s", event, details)
-    
+        Client().send_event(event, safe.status())        # status snapshot taken here
+        
+        
+    pins = Pins()
     safe = Safe(loop, pins, notify)
-
+    server = Server(loop, safe)
+    
     # -- Register the hardware in the loop watchlist and pass behavior function -- #
     loop.watch(pins.fd, lambda: handle_door_pin(pins, safe))
 
@@ -59,6 +62,9 @@ def main():
     finally:
         # -- Puts outputs in safe state -- #
         pins.release()
+
+        # -- Close server -- #
+        server.close()
 
  
  

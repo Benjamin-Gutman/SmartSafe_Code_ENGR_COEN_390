@@ -4,3 +4,5 @@
 
 # Local project archive
 /SafeUI.zip
+__pycache__/
+*.py[cod]
