@@ -149,7 +149,5 @@ def build_command_parser() -> SocketArgumentParser:
 
     p = sub.add_parser("getStatus", help= "give save status", formatter_class=argparse.RawTextHelpFormatter)
 
-    
-
     sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)
     return parser
