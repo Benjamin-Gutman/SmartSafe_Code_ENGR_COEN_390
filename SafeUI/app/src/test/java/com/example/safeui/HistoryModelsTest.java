@@ -193,6 +193,39 @@ public class HistoryModelsTest
     }
 
     @Test
+    public void historyKeepsAnActorWhenTheServerSuppliesOne()
+    {
+        Models.InventoryHistoryItem event = entry(1, 5, "add", START);
+        event.username = "Alice";
+        assertEquals("Alice", reply(Collections.singletonList(event))
+                .asInventoryHistoryItems().get(0).username);
+    }
+
+    @Test
+    public void missingNullAndBlankActorsRemainUnknown()
+    {
+        assertNull(reply(Collections.singletonList(entry(1, 5, "add", START)))
+                .asInventoryHistoryItems().get(0).username);
+        String template = "{\"history\":[{\"item_id\":1,\"item_name\":\"Passport\","
+                + "\"quantity\":5,\"action\":\"add\",\"timestamp\":\"" + START
+                + "\",\"username\":%s}]}";
+        for (String actor : Arrays.asList("null", "\"\"", "\"   \""))
+            assertNull(json(String.format(template, actor))
+                    .asInventoryHistoryItems().get(0).username);
+    }
+
+    @Test
+    public void malformedActorIsRejectedInsteadOfTurnedIntoAName()
+    {
+        String template = "{\"history\":[{\"item_id\":1,\"item_name\":\"Passport\","
+                + "\"quantity\":5,\"action\":\"add\",\"timestamp\":\"" + START
+                + "\",\"username\":%s}]}";
+        for (String actor : Arrays.asList("7", "true", "[]", "{}"))
+            assertThrows(IllegalArgumentException.class,
+                    () -> json(String.format(template, actor)).asInventoryHistoryItems());
+    }
+
+    @Test
     public void rejectsWrongFieldTypesAndOutOfRangeNumbers()
     {
         String template =

@@ -154,6 +154,61 @@ public class InventoryHistoryStoreTest
     }
 
     @Test
+    public void actorsSurviveItemRefreshAndDatabaseReopening()
+    {
+        Models.InventoryHistoryItem event = entry(1, 5, "add", "2026-11-11T18:00:00Z");
+        event.username = "Alice";
+        store.replaceAllHistory(Collections.singletonList(event));
+        store.replaceHistoryForItem(2, Collections.singletonList(
+                entry(2, 3, "add", "2026-11-11T18:01:00Z")));
+        helper.close();
+        helper = new DatabaseHelper(RuntimeEnvironment.getApplication());
+        store = new InventoryHistoryStore(helper);
+        assertEquals("Alice", store.getForItem(1).get(0).username);
+        assertNull(store.getForItem(2).get(0).username);
+    }
+
+    @Test
+    public void versionFiveUpgradeAddsActorWithoutLosingCachedEvents()
+    {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.execSQL("DROP TABLE inventory_history_cache");
+        db.execSQL("CREATE TABLE inventory_history_cache (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "item_id INTEGER NOT NULL, item_name TEXT NOT NULL, quantity INTEGER NOT NULL, "
+                + "action TEXT NOT NULL, timestamp TEXT NOT NULL, timestamp_micros INTEGER NOT NULL, "
+                + "source_order INTEGER NOT NULL, quantity_change INTEGER)");
+        Models.InventoryHistoryItem event = entry(1, 3, "remove", "2026-11-11T18:00:00Z");
+        db.execSQL("INSERT INTO inventory_history_cache "
+                        + "(item_id,item_name,quantity,action,timestamp,timestamp_micros,source_order) "
+                        + "VALUES(1,'Passport',3,'remove',?,?,0)",
+                new Object[]{event.timestamp, event.getTimestampMicros()});
+        db.setVersion(5);
+        helper.close();
+        helper = new DatabaseHelper(RuntimeEnvironment.getApplication());
+        store = new InventoryHistoryStore(helper);
+        assertEquals(6, helper.getReadableDatabase().getVersion());
+        assertEquals(1, store.getAll().size());
+        assertEquals(Integer.valueOf(3), store.getAll().get(0).quantity);
+        assertNull(store.getAll().get(0).username);
+    }
+
+    @Test
+    public void serverRefreshLeavesLegacyNamesAndRecordedAmountsAvailable()
+    {
+        helper.getWritableDatabase().execSQL("INSERT INTO inventory_history "
+                + "(item_id,item_name,username,action,quantity_change,event_time) "
+                + "VALUES(1,'Passport','JJ','REMOVED',2,'2026-11-11 18:00:00')");
+        store.replaceAllHistory(snapshot());
+        store.replaceAllHistory(Collections.emptyList());
+        List<InventoryHistoryStore.LegacyHistoryItem> legacy = store.getLegacyHistory();
+        assertEquals(1, legacy.size());
+        assertEquals("JJ", legacy.get(0).username);
+        assertEquals(2, legacy.get(0).quantity_change);
+        assertEquals("2026-11-11 18:00:00", legacy.get(0).event_time);
+        assertTrue(store.getAll().isEmpty());
+    }
+
+    @Test
     public void versionFourUpgradePreservesAccountsInventoryAndLegacyHistory()
     {
         SQLiteDatabase db = helper.getWritableDatabase();
@@ -167,7 +222,7 @@ public class InventoryHistoryStoreTest
 
         helper = new DatabaseHelper(RuntimeEnvironment.getApplication());
         store = new InventoryHistoryStore(helper);
-        assertEquals(5, helper.getReadableDatabase().getVersion());
+        assertEquals(6, helper.getReadableDatabase().getVersion());
         assertTrue(helper.hasUsers());
         try (Cursor cursor = helper.getInventory()) { assertEquals(1, cursor.getCount()); }
         try (Cursor cursor = helper.getReadableDatabase().rawQuery("SELECT * FROM inventory_history", null))

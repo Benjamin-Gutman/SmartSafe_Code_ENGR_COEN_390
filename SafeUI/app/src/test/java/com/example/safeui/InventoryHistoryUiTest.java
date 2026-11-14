@@ -147,7 +147,7 @@ public class InventoryHistoryUiTest
         assertTrue(deletion.contains("Last recorded quantity: 3"));
         assertTrue(removal.contains("Action: Removed"));
         assertTrue(removal.contains("Remaining quantity: 3"));
-        assertFalse(removal.contains("User:"));
+        assertTrue(removal.contains("User: Unknown"));
         assertEquals(Collections.singletonList("history"), sender.commands);
     }
 
@@ -183,6 +183,71 @@ public class InventoryHistoryUiTest
 
         assertEquals("Passport permanently deleted.", ShadowToast.getTextOfLatestToast());
         assertEquals(Arrays.asList("delete 1", "history"), sender.commands);
+    }
+
+    @Test
+    public void historyDisplaysTheRecordedActorInsteadOfTheViewer() throws Exception
+    {
+        activity.setIntent(new android.content.Intent().putExtra("username", "JJ"));
+        Models.InventoryHistoryItem event = entry(1, 3, "remove", "2026-11-11T18:01:00Z");
+        event.username = "Alice";
+        startRefresh(true);
+        sender.callback.onReply(reply(Collections.singletonList(event)));
+        drainUi();
+        String text = ((TextView) rows.getChildAt(0)).getText().toString();
+        assertTrue(text.contains("User: Alice"));
+        assertFalse(text.contains("User: JJ"));
+    }
+
+    @Test
+    public void legacyHistoryRemainsVisibleWithItsUserAndOriginalQuantityMeaning() throws Exception
+    {
+        helper.getWritableDatabase().execSQL("INSERT INTO inventory_history "
+                + "(item_id,item_name,username,action,quantity_change,event_time) "
+                + "VALUES(1,'Passport','JJ','REMOVED',2,'2026-11-11 18:00:00')");
+        startRefresh(true);
+        sender.callback.onReply(reply(Collections.emptyList()));
+        drainUi();
+        assertEquals(2, rows.getChildCount());
+        assertEquals("Previous records on this phone",
+                ((TextView) rows.getChildAt(0)).getText().toString());
+        String text = ((TextView) rows.getChildAt(1)).getText().toString();
+        assertTrue(text.contains("User: JJ"));
+        assertTrue(text.contains("Action: Removed"));
+        assertTrue(text.contains("Recorded amount: 2"));
+        assertTrue(text.contains("Remaining quantity: Unknown"));
+        assertFalse(text.contains("Remaining quantity: 2"));
+    }
+
+    @Test
+    public void addingQuantityUpdatesTheExistingItemAndThenRefreshesItsHistory() throws Exception
+    {
+        helper.getWritableDatabase().execSQL(
+                "INSERT INTO inventory(item_id,item_name,quantity) VALUES(1,'Passport',5)");
+        ReflectionHelpers.callInstanceMethod(activity, "beginInventoryRequest",
+                ReflectionHelpers.ClassParameter.from(String.class, "Quantity added."));
+        sync.increment(1, 2);
+        assertEquals(Collections.singletonList("add 1 2"), sender.commands);
+
+        sender.callback.onReply(json(
+                "{\"status\":\"ok\",\"command\":\"add\",\"inventory\":"
+                        + "{\"item_id\":1,\"item_name\":\"Passport\",\"quantity\":7}}"));
+        drainUi();
+        assertEquals(Arrays.asList("add 1 2", "history"), sender.commands);
+        try (android.database.Cursor cursor = helper.getInventory())
+        {
+            assertTrue(cursor.moveToFirst());
+            assertEquals(7, cursor.getInt(cursor.getColumnIndexOrThrow("quantity")));
+        }
+
+        sender.callback.onReply(reply(Arrays.asList(
+                entry(1, 5, "add", "2026-11-11T18:00:00Z"),
+                entry(1, 7, "add", "2026-11-11T18:01:00Z"))));
+        drainUi();
+        assertEquals(2, store.getAll().size());
+        assertEquals(Integer.valueOf(7), store.getAll().get(0).quantity);
+        assertEquals(Integer.valueOf(2), store.getAll().get(0).quantity_change);
+        assertEquals(2, sender.commands.size());
     }
 
     private static class FakeSender implements DataSync.CommandSender

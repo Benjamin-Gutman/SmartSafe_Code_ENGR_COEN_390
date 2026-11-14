@@ -52,6 +52,10 @@ public class Models
         public String action;
         public String timestamp;
 
+        // Optional: the current Pi response has no actor. Never substitute the
+        // person viewing the screen for the person who performed an old event.
+        public String username;
+
         // Calculated locally from complete history. Null means the change is unknown.
         // A "delete" event deletes an inventory record; it is not a measured stock change.
         public transient Integer quantity_change;
@@ -153,6 +157,14 @@ public class Models
         return value.getAsString();
     }
 
+    private static String optionalHistoryText(JsonObject object, String field)
+    {
+        JsonElement value = object.get(field);
+        if (value == null || value.isJsonNull()) return null;
+        String text = historyText(object, field).trim();
+        return text.isEmpty() ? null : text;
+    }
+
     // For response received from server.
     public static class Reply
     {
@@ -232,6 +244,7 @@ public class Models
                 item.quantity = historyInteger(object, "quantity");
                 item.action = historyText(object, "action");
                 item.timestamp = historyText(object, "timestamp");
+                item.username = optionalHistoryText(object, "username");
                 items.add(item);
             }
             return prepareHistory(items, null);

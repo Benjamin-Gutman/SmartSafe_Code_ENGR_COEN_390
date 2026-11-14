@@ -16,7 +16,7 @@ import java.util.Locale;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "SafeInventory.db";
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6;
 
     public static final String INVENTORY_HISTORY_CACHE = "inventory_history_cache";
 
@@ -68,6 +68,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "item_id INTEGER NOT NULL, " +
                 "item_name TEXT NOT NULL, " +
+                "username TEXT, " +
                 "quantity INTEGER NOT NULL, " +
                 "action TEXT NOT NULL, " +
                 "timestamp TEXT NOT NULL, " +
@@ -124,6 +125,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         if (oldVersion < 5) {
             createInventoryHistoryCache(db);
+        } else if (oldVersion < 6) {
+            // Version 5 already has the cache. Add the optional actor without
+            // deleting its events, the accounts, or the original local history.
+            db.execSQL("ALTER TABLE " + INVENTORY_HISTORY_CACHE +
+                    " ADD COLUMN username TEXT");
         }
     }
 

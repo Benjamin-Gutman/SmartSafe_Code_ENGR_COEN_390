@@ -12,6 +12,18 @@ import java.util.List;
 // Saves downloaded history and provides cached records to the UI.
 public class InventoryHistoryStore implements DataSync.HistoryLocalStore
 {
+    // The older phone-only table records an entered amount, not the remaining
+    // stock. Keep it separate instead of turning it into a server event.
+    public static class LegacyHistoryItem
+    {
+        public Integer item_id;
+        public String item_name;
+        public String username;
+        public String action;
+        public int quantity_change;
+        public String event_time;
+    }
+
     private static final String TABLE =
             DatabaseHelper.INVENTORY_HISTORY_CACHE;
 
@@ -64,6 +76,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                 ContentValues values = new ContentValues();
                 values.put("item_id", item.item_id);
                 values.put("item_name", item.item_name);
+                values.put("username", item.username);
                 values.put("quantity", item.quantity);
                 values.put("action", item.action);
                 values.put("timestamp", item.timestamp);
@@ -139,7 +152,8 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                         "quantity",
                         "action",
                         "timestamp",
-                        "quantity_change"
+                        "quantity_change",
+                        "username"
                 },
                 selection,
                 arguments.toArray(new String[0]),
@@ -160,11 +174,38 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                 item.quantity_change = cursor.isNull(5)
                         ? null
                         : cursor.getInt(5);
+                item.username = cursor.isNull(6) ? null : cursor.getString(6);
 
                 items.add(item);
             }
         }
 
+        return items;
+    }
+
+    // Read-only access to records created by the earlier UI. Server refreshes
+    // continue replacing only the server cache, so these names are preserved.
+    public List<LegacyHistoryItem> getLegacyHistory()
+    {
+        List<LegacyHistoryItem> items = new ArrayList<>();
+        try (Cursor cursor = helper.getReadableDatabase().query(
+                "inventory_history",
+                new String[]{"item_id", "item_name", "username", "action",
+                        "quantity_change", "event_time"},
+                null, null, null, null, "event_time DESC, id DESC"))
+        {
+            while (cursor.moveToNext())
+            {
+                LegacyHistoryItem item = new LegacyHistoryItem();
+                item.item_id = cursor.isNull(0) ? null : cursor.getInt(0);
+                item.item_name = cursor.getString(1);
+                item.username = cursor.getString(2);
+                item.action = cursor.getString(3);
+                item.quantity_change = cursor.getInt(4);
+                item.event_time = cursor.getString(5);
+                items.add(item);
+            }
+        }
         return items;
     }
 

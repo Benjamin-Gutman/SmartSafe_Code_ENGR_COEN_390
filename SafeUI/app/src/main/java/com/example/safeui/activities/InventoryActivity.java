@@ -25,6 +25,7 @@ import com.example.safeui.http_handler.Models;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -221,10 +222,12 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         historyReader.execute(() -> {
             try {
                 List<Models.InventoryHistoryItem> events = historyStore.getAll();
+                List<InventoryHistoryStore.LegacyHistoryItem> legacy =
+                        historyStore.getLegacyHistory();
                 runOnUiThread(() -> {
                     if (!destroyed && !isFinishing() && showingHistory
                             && generation == historyReadGeneration) {
-                        displayInventoryHistory(events);
+                        displayInventoryHistory(events, legacy);
                     }
                 });
             } catch (RuntimeException error) {
@@ -241,10 +244,11 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         });
     }
 
-    private void displayInventoryHistory(List<Models.InventoryHistoryItem> events) {
+    private void displayInventoryHistory(List<Models.InventoryHistoryItem> events,
+                                         List<InventoryHistoryStore.LegacyHistoryItem> legacy) {
         layoutInventoryItems.removeAllViews();
 
-        if (events.isEmpty()) {
+        if (events.isEmpty() && legacy.isEmpty()) {
             TextView message = new TextView(this);
             message.setText("No inventory history yet.");
             message.setTextSize(16);
@@ -264,6 +268,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             TextView historyEntry = new TextView(this);
             historyEntry.setText(
                     "Item: " + event.item_name
+                            + "\nUser: " + historyUsername(event.username)
                             + "\nAction: " + historyActionLabel(event.action)
                             + "\n" + quantityLabel + event.quantity
                             + "\nDate: " + dates.format(new Date(event.getTimestampMillis())));
@@ -272,15 +277,48 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             historyEntry.setPadding(16, 16, 16, 16);
             layoutInventoryItems.addView(historyEntry);
         }
+
+        if (!legacy.isEmpty()) {
+            TextView heading = new TextView(this);
+            heading.setText("Previous records on this phone");
+            heading.setTextSize(18);
+            heading.setPadding(16, 24, 16, 8);
+            layoutInventoryItems.addView(heading);
+
+            // Older records contain a local time and an entered amount. Do not
+            // invent a UTC time or copy that amount into remaining quantity.
+            for (InventoryHistoryStore.LegacyHistoryItem event : legacy) {
+                TextView historyEntry = new TextView(this);
+                historyEntry.setText(
+                        "Item: " + event.item_name
+                                + "\nUser: " + historyUsername(event.username)
+                                + "\nAction: " + historyActionLabel(event.action)
+                                + "\nRecorded amount: " + event.quantity_change
+                                + "\nRemaining quantity: Unknown"
+                                + "\nDate recorded on phone: " + event.event_time);
+                historyEntry.setTextSize(15);
+                historyEntry.setTextColor(0xFF202124);
+                historyEntry.setPadding(16, 16, 16, 16);
+                layoutInventoryItems.addView(historyEntry);
+            }
+        }
+    }
+
+    private String historyUsername(String username) {
+        return username == null || username.trim().isEmpty()
+                ? "Unknown" : username.trim();
     }
 
     private String historyActionLabel(String action) {
-        switch (action) {
+        switch (action.toLowerCase(Locale.ROOT)) {
             case "add":
+            case "added":
                 return "Added";
             case "remove":
+            case "removed":
                 return "Removed";
             case "delete":
+            case "deleted":
                 return "Deleted";
             default:
                 return action;
