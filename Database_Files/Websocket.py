@@ -39,6 +39,10 @@ def syncStatus(): #sync doorStatus with HW program
         doorStatus.isLocked = state["locked"]
         doorStatus.isOpen = state["open"]
         doorStatus.alarm = state["alarm"]
+
+def sendHW(msg): #sync doorStatus with HW program
+    with connect("ws://localhost:8766") as websocket:
+        websocket.send(msg)
  
 # Serialization helpers
 def item_to_dict(item) -> dict:
@@ -244,11 +248,16 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
     
 #Android comunication
 
-
         if cmd == "getStatus":
             return ok(cmd, doorStatus=status_to_dict(doorStatus))
-             
 
+        if cmd == "lockDoor":
+            sendHW("lock")
+            return ok(cmd, message="command sent")
+
+        if cmd == "unlockDoor":
+            sendHW("unlock")
+            return ok(cmd, message="command sent")
         
  
     return error(f"Unhandled command '{cmd}'", cmd)
