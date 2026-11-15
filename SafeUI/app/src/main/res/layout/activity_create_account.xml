@@ -40,6 +40,15 @@
             android:layout_marginBottom="12dp" />
 
         <EditText
+            android:id="@+id/editTextEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:layout_marginBottom="12dp"
+            android:hint="Email"
+            android:inputType="text" />
+
+        <EditText
             android:id="@+id/editPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -63,9 +72,12 @@
             android:id="@+id/buttonCreateAccount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="CREATE ACCOUNT"
             android:backgroundTint="#27805B"
+            android:text="CREATE ACCOUNT"
             android:textColor="#FFFFFF" />
+
+
+
 
     </LinearLayout>
 </ScrollView>

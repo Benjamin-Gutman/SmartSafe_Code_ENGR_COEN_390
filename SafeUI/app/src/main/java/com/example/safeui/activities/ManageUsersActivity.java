@@ -1,6 +1,6 @@
 package com.example.safeui.activities;
 
-import android.database.Cursor;
+
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -13,11 +13,24 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.safeui.DatabaseHelper;
 import com.example.safeui.R;
+import com.example.safeui.http_handler.DataSync;
+import com.example.safeui.http_handler.InventoryStore;
+import com.example.safeui.http_handler.Models;
+import com.example.safeui.http_handler.UserStore;
+import java.util.ArrayList;
+import java.util.List;
 
-public class ManageUsersActivity extends AppCompatActivity {
+public class ManageUsersActivity extends AppCompatActivity implements DataSync.Listener {
     private DatabaseHelper databaseHelper;
     private String adminUsername;
     private LinearLayout userList;
+    private UserStore store;
+    private DataSync sync;
+    private List<Models.User> serverUsers = new ArrayList<>();
+
+    private CheckBox pendingPermissionCheckbox;
+    private Boolean previousPermission;
+    private Boolean permissionUpdatePending = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,33 +39,39 @@ public class ManageUsersActivity extends AppCompatActivity {
 
         adminUsername = getIntent().getStringExtra("username");
         databaseHelper = new DatabaseHelper(this);
+        //set up datasync object to get info from database on RPI 
+        store = new UserStore(databaseHelper);
+        sync = new DataSync(this, new InventoryStore(databaseHelper), store);
+        
+        //check if user is admin or not
+
+        sync.getUserByUsername(adminUsername);
 
         // Only administrators may access this screen.
-        if (adminUsername == null || !databaseHelper.isAdmin(adminUsername)) {
-            Toast.makeText(this, "Administrator access required.", Toast.LENGTH_LONG).show();
-
-            finish();
-            return;
-        }
+        // personally don't think this will be useful since you have to be an admin to see the button
+        // to access this page in the first place, but will keep it here for now.
+        // if (adminUsername == null || !isAdminFlag ) {
+        //     return;
+        // }
 
         userList = findViewById(R.id.userList);
 
         Button buttonBack = findViewById(R.id.buttonBackManageUsers);
         buttonBack.setOnClickListener(v -> finish());
-
-        loadUsers();
+        //will demand user list from users, and in the onreply will trigger the UI change function of loadUsers()
+        sync.listUsers();
     }
-
+    //Ui should be a series of rows
     private void loadUsers() {
         userList.removeAllViews();
 
-        try (Cursor cursor = databaseHelper.getAllUsers()) {
+        try {
 
-            while (cursor != null && cursor.moveToNext()) {
-                int userId = cursor.getInt(0);
-                String username = cursor.getString(1);
-                String role = cursor.getString(2);
-                boolean canOpenSafe = cursor.getInt(3) == 1;
+            for (Models.User user : serverUsers) {
+                int userId = user.user_id;
+                String username = user.username;
+                String role = user.isAdmin ? "Admin" : "User";
+                boolean canOpenSafe = user.hasOpenDoorPrivilege;
 
                 // Do not list the current administrator.
                 if (username.equalsIgnoreCase(adminUsername)) {
@@ -99,26 +118,7 @@ public class ManageUsersActivity extends AppCompatActivity {
 
                 //check mark button to give safe permissions
                 permission.setOnCheckedChangeListener(
-                        (button, checked) -> {
-                            button.setEnabled(false);
-
-                            boolean success = databaseHelper.setSafeAccess(userId, checked);
-
-                            if (!success) {
-                                // Temporarily remove the listener so
-                                // reverting the checkbox doesn't retry
-                                // the database update.
-                                button.setOnCheckedChangeListener(null);
-                                button.setChecked(!checked);
-
-                                Toast.makeText(this, "Could not update permission.", Toast.LENGTH_SHORT).show();
-
-                                button.setOnCheckedChangeListener((changedButton, newChecked) -> updatePermission((CheckBox)changedButton, userId, newChecked));
-                            } else {
-                                Toast.makeText(this, checked ? "Safe access granted." : "Safe access revoked.", Toast.LENGTH_SHORT).show();
-                            }
-                            button.setEnabled(true);
-                        }
+                    (button, checked) -> updatePermission((CheckBox) button,userId,checked,user.isAdmin)
                 );
                 userList.addView(row);
             }
@@ -146,28 +146,68 @@ public class ManageUsersActivity extends AppCompatActivity {
         }
     }
 
-    //update permission implementation
-    private void updatePermission(
-            CheckBox button,
-            int userId,
-            boolean checked
-    ) {
+    //functionality for checkbox to change safe permissions.
+    private void updatePermission(CheckBox button, int userId, boolean checked, boolean isAdmin) {
+
+        if (permissionUpdatePending) { // if functions gets called while waiting for server response.
+        return;
+        }
+
+        permissionUpdatePending = true;
+
+        pendingPermissionCheckbox = button;
+        previousPermission = !checked; // was going to use it in case server access is failed for some reason. but due to current configuration of onError, will not be used.
+
         button.setEnabled(false);
 
-        boolean success = databaseHelper.setSafeAccess(
-                userId,
-                checked
-        );
-        if (!success) {
-            button.setOnCheckedChangeListener(null);
-            button.setChecked(!checked);
+        sync.updateUserPrivileges(userId, isAdmin, checked);
 
-            Toast.makeText(this, "Could not update permission.", Toast.LENGTH_SHORT).show();
-
-            button.setOnCheckedChangeListener((changedButton, newChecked) -> updatePermission((CheckBox)changedButton, userId, newChecked));
-        } else {
-            Toast.makeText(this, checked ? "Safe access granted." : "Safe access revoked.", Toast.LENGTH_SHORT).show();
-        }
-        button.setEnabled(true);
     }
+
+    @Override 
+    public void onReply(Models.Reply reply){
+        if("listUsers".equals(reply.command)){
+           serverUsers = reply.asUsers();
+           loadUsers(); // refresh the layout.
+        }
+        else if("updateUserPrivileges".equals(reply.command)){
+            //will do the logic for the checkbox change be done here so that it actually has the response of the server to work with.
+            permissionUpdatePending = false;
+
+            if (pendingPermissionCheckbox != null) {
+                pendingPermissionCheckbox.setEnabled(true);
+            }
+            Models.User user = reply.asUser();
+            Toast.makeText(this, "User permissions updated for " +user.username, Toast.LENGTH_SHORT).show();
+            pendingPermissionCheckbox = null;
+        }
+        else if("getUserByUsername".equals(reply.command)){
+            Models.User user = reply.asUser();
+            if (user != null && user.isAdmin){
+     
+                sync.listUsers();
+            }else{
+                Toast.makeText(this, "Administrator access required.", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
+    }
+    
+    @Override 
+    public void onError(String message){
+        Toast.makeText(this,  message, Toast.LENGTH_SHORT).show();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

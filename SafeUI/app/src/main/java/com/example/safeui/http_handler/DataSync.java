@@ -33,6 +33,7 @@ public class DataSync
         void onError(String message);
     }
 
+
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
     private final Listener listener;
@@ -40,9 +41,10 @@ public class DataSync
     private final HistoryLocalStore historyStore;
     private final CommandSender sender;
 
+    //will forward these constructors to the main one with all of args. 
     public DataSync(Listener listener)
     {
-        this(listener, null);
+        this(listener, null, null);
     }
 
     public DataSync(Listener listener, LocalStore store)
@@ -65,7 +67,10 @@ public class DataSync
         this.sender = sender;
     }
 
+
     // ---- Commands (call from the UI; one at a time) ----
+    
+    // Inventory
 
     public void refreshAll()
     {
@@ -115,6 +120,65 @@ public class DataSync
     public void delete(int itemId)
     {
         run(Commands.deleteInventoryItem(itemId));
+    }
+
+    //User, will always have USER in it.
+
+    public void createUser(String username, String email, String password)
+    {
+        run(Commands.createUser(username,email, password));
+    }
+
+    public void getUserByID(int user_id)
+    {
+        run(Commands.getUserByID(user_id));
+    }
+
+    public void getUserByUsername(String username)
+    {
+        run(Commands.getUserByUsername(username));
+    }
+
+    public void listUsers()
+    {
+        run(Commands.listUsers());
+    }
+
+    public void updateUserInfo(int user_id, String username, String email, boolean isAdmin, boolean hasOpenDoorPrivilege, String password)
+    {
+        run(Commands.updateUserInfo(user_id,username,email,isAdmin, hasOpenDoorPrivilege,password));
+    }
+
+    public void updatePassword(int user_id, String new_password)
+    {
+        run(Commands.updatePassword(user_id, new_password));
+    }
+
+    public void updateUserPrivileges(int user_id, boolean isAdmin, boolean hasOpenDoorPrivilege)
+    {
+        run(Commands.updateUserPrivileges(user_id,isAdmin,hasOpenDoorPrivilege));
+    }
+
+    public void verifyUser(String username, String password)
+    {
+        run(Commands.verifyUser(username,password));
+    }
+
+    // User Access History related commands
+
+    public void getAccessHistory(int access_id)
+    {
+        run(Commands.getAccessHistory(access_id));
+    }
+
+    public void listAccessHistory()
+    {
+        run(Commands.listAccessHistory());
+    }
+
+    public void getAccessHistoryByUser(int user_id)
+    {
+        run(Commands.getAccessHistoryByUser(user_id));
     }
 
     // ---- Internals ----
@@ -183,26 +247,60 @@ public class DataSync
     // Forwards a successful reply to LocalStore, if one is connected.
     private void apply(Models.Reply reply)
     {
-        if (store == null) return;
-
         String command = reply.command == null ? "" : reply.command;
         switch (command)
         {
+            //inventory related stuff
             case "list":
-                store.replaceAll(reply.asInventoryItems());
+                if (store != null){
+                    store.replaceAll(reply.asInventoryItems());
+                }
                 break;
-
             case "create":
             case "add":
             case "remove":
             case "update":
             case "get":
-                Models.InventoryItem item = reply.asInventoryItem();
-                if (item != null) store.upsert(item);
+                if (store != null){
+                    Models.InventoryItem item = reply.asInventoryItem();
+                    if (item != null) store.upsert(item);
+                }
+                 break;
+            case "delete":
+                    if (store !=null && reply.item_id != null) 
+                    {
+                        {store.remove(reply.item_id);}
+                    }
+                break;
+            //users related stuff  
+            case "listUsers":
+                    if( userStore !=null){
+                        userStore.replaceAll(reply.asUsers());
+                    }
+                break;
+                
+            case "createUser":
+            case "updateUserInfo":
+            case "updateUserPrivileges":
+            case "getUserByUsername":
+            case "updatePassword":
+            case "getUserByID":
+                if( userStore !=null){
+                    Models.User user = reply.asUser();
+                    if (user != null)
+                    {
+                        userStore.upsert(user);
+                    }
+                }
                 break;
 
-            case "delete":
-                if (reply.item_id != null) store.remove(reply.item_id);
+            case "deleteUser":
+
+                if (userStore !=null && reply.user_id != null)
+                {
+                    userStore.remove(reply.user_id);
+                }
+                    
                 break;
 
             default:

@@ -11,22 +11,24 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.safeui.DatabaseHelper;
 import com.example.safeui.R;
+import com.example.safeui.http_handler.DataSync;
+import com.example.safeui.http_handler.InventoryStore;
+import com.example.safeui.http_handler.Models;
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends AppCompatActivity implements DataSync.Listener {
     private EditText editUsername;
     private EditText editPassword;
-    private DatabaseHelper databaseHelper;
+    private DataSync sync;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        databaseHelper = new DatabaseHelper(this);
 
         editUsername = findViewById(R.id.editLoginUsername);
         editPassword = findViewById(R.id.editLoginPassword);
-
         Button buttonLogin = findViewById(R.id.buttonLogin);
         TextView textCreateAccount = findViewById(R.id.textCreateAccount);
 
@@ -36,10 +38,9 @@ public class LoginActivity extends AppCompatActivity {
         // Set up the create account option.
         textCreateAccount.setOnClickListener(v ->openCreateAccount());
 
-        // If no accounts exist, open account creation.
-        if (!databaseHelper.hasUsers()) {
-            openCreateAccount();
-        }
+        //set up datasync object to get info from database on RPI
+         sync = new DataSync(this);
+
     }
 
     private void login() {
@@ -52,18 +53,7 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        if (databaseHelper.validateUser(username, password)) {
-
-            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-
-            intent.putExtra("username", username);
-
-            startActivity(intent);
-            finish();
-
-        } else {
-            Toast.makeText(this, "Incorrect username or password.", Toast.LENGTH_SHORT).show();
-        }
+        sync.verifyUser(username,password); // will call server database to verify user, check onReply to see how it responds. 
     }
 
     private void openCreateAccount() {
@@ -71,5 +61,50 @@ public class LoginActivity extends AppCompatActivity {
 
         startActivity(intent);
     }
+
+    @Override 
+    public void onReply(Models.Reply reply){
+        if("verifyUser".equals(reply.command)){
+            //if login successful, will go to main activity and feedback of successful login. 
+            // trasmits username to mainActivity
+            if (!reply.message.contains("not")){//message will only contain not if user not found, so will only proceed if there isn't not in message
+                String username = editUsername.getText().toString().trim();
+                Toast.makeText(this, "Succesfully logged in, user: " + username , Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent( LoginActivity.this, MainActivity.class);
+                intent.putExtra("username", username);
+                startActivity(intent);
+               // finish();
+            } else{
+                Toast.makeText(this, "Incorrect password, TRY AGAIN", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+    // Databasehelper.py will return an error if an only if  user was not found.
+    // Message should be "User {username} not found"
+    // Only possible error message response in this activity. 
+    @Override 
+    public void onError(String message){
+        Toast.makeText(this,  "ERROR:" + message, Toast.LENGTH_LONG).show();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
