@@ -111,7 +111,7 @@ def build_command_parser() -> SocketArgumentParser:
     p.add_argument("--user_id", type=int, required=True)
 
     p = sub.add_parser("verifyUser", help= "for verifying a user", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--name", required=True)
+    p.add_argument("--username", required=True)
     p.add_argument("--password")
 
 #--------------------------------------------------------------------
