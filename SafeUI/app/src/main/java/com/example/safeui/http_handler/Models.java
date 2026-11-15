@@ -175,6 +175,7 @@ public class Models
         public JsonElement history;
         public JsonElement users;
         public JsonElement user;
+        public Integer user_id;
         public Integer item_id; // Not sure why its here, but will keep just in case for now
 
 

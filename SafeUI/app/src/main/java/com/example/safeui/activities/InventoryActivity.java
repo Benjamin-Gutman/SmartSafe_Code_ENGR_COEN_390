@@ -338,8 +338,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     }
 
     private String historyUsername(String username) {
-        return username == null || username.trim().isEmpty()
-                ? "Unknown" : username.trim();
+        return username == null || username.trim().isEmpty() ? "Unknown" : username.trim();
     }
 
     private String historyActionLabel(String action) {

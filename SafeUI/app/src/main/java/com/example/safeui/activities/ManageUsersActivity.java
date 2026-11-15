@@ -41,25 +41,16 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
         databaseHelper = new DatabaseHelper(this);
         //set up datasync object to get info from database on RPI 
         store = new UserStore(databaseHelper);
-        sync = new DataSync(this, new InventoryStore(databaseHelper), store);
-        
-        //check if user is admin or not
-
-        sync.getUserByUsername(adminUsername);
-
-        // Only administrators may access this screen.
-        // personally don't think this will be useful since you have to be an admin to see the button
-        // to access this page in the first place, but will keep it here for now.
-        // if (adminUsername == null || !isAdminFlag ) {
-        //     return;
-        // }
+        sync = new DataSync(this, null, null, store);
 
         userList = findViewById(R.id.userList);
+        
+        //check if user is admin or not
+        sync.getUserByUsername(adminUsername);
 
         Button buttonBack = findViewById(R.id.buttonBackManageUsers);
         buttonBack.setOnClickListener(v -> finish());
-        //will demand user list from users, and in the onreply will trigger the UI change function of loadUsers()
-        sync.listUsers();
+
     }
     //Ui should be a series of rows
     private void loadUsers() {
@@ -178,7 +169,13 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
                 pendingPermissionCheckbox.setEnabled(true);
             }
             Models.User user = reply.asUser();
-            Toast.makeText(this, "User permissions updated for " +user.username, Toast.LENGTH_SHORT).show();
+
+            if (user != null) {
+                Toast.makeText(this, "User permissions updated for " + user.username, Toast.LENGTH_SHORT).show();
+            }
+            else {
+                Toast.makeText(this, "User permissions updated.", Toast.LENGTH_SHORT).show();
+            }
             pendingPermissionCheckbox = null;
         }
         else if("getUserByUsername".equals(reply.command)){

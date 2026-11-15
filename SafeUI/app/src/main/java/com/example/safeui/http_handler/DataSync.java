@@ -21,6 +21,12 @@ public class DataSync
         void replaceHistoryForItem(int itemId, List<Models.InventoryHistoryItem> items);
     }
 
+    public interface UserLocalStore {
+        void upsert(Models.User user);
+        void remove(int userID);
+        void replaceAll(List<Models.User> users);
+    }
+
     // Allows tests to supply replies without connecting to the team's Pi.
     interface CommandSender
     {
@@ -40,6 +46,7 @@ public class DataSync
     private final LocalStore store;
     private final HistoryLocalStore historyStore;
     private final CommandSender sender;
+    private final UserLocalStore userStore;
 
     //will forward these constructors to the main one with all of args. 
     public DataSync(Listener listener)
@@ -54,16 +61,22 @@ public class DataSync
 
     public DataSync(Listener listener, LocalStore store, HistoryLocalStore historyStore)
     {
-        this(listener, store, historyStore, ClientSocket.get()::send);
+        this(listener, store, historyStore, null);
     }
 
-    DataSync(Listener listener, LocalStore store, HistoryLocalStore historyStore, CommandSender sender)
+    //second constructor for userStore
+    public DataSync (Listener listener, LocalStore store, HistoryLocalStore historyStore, UserLocalStore userStore){
+        this(listener, store, historyStore, userStore, ClientSocket.get()::send);
+    }
+
+    DataSync(Listener listener, LocalStore store, HistoryLocalStore historyStore, UserLocalStore userStore, CommandSender sender)
     {
         if (listener == null || sender == null)
             throw new IllegalArgumentException("A listener and command sender are required");
         this.listener = listener;
         this.store = store;
         this.historyStore = historyStore;
+        this.userStore = userStore;
         this.sender = sender;
     }
 
@@ -307,4 +320,5 @@ public class DataSync
                 break;
         }
     }
+
 }

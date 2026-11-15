@@ -74,7 +74,7 @@ public class Commands
 
     public static String getUserByUsername(String username)
     {
-        return "getUserByUsername " + username;
+        return "getUserByUsername --username " + username;
     }
 
     public static String listUsers()
