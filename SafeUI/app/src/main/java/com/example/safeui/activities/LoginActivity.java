@@ -60,7 +60,7 @@ public class LoginActivity extends AppCompatActivity implements DataSync.Listene
         Intent intent = new Intent(LoginActivity.this, CreateAccountActivity.class);
 
         startActivity(intent);
-        finish();
+
     }
 
     @Override 
