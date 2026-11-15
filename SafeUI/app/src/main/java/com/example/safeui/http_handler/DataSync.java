@@ -95,9 +95,9 @@ public class DataSync
 
     //User, will always have USER in it.
 
-    public void createUser(String username, String email)
+    public void createUser(String username, String email, String password)
     {
-        run(Commands.createUser(username,email));
+        run(Commands.createUser(username,email, password));
     }
 
     public void getUserByID(int user_id)
@@ -130,9 +130,9 @@ public class DataSync
         run(Commands.updateUserPrivileges(user_id,isAdmin,hasOpenDoorPrivilege));
     }
 
-    public void verifyUser(int user_id, String password)
+    public void verifyUser(String username, String password)
     {
-        run(Commands.verifyUser(user_id,password));
+        run(Commands.verifyUser(username,password));
     }
 
     // User Access History related commands
@@ -217,10 +217,13 @@ public class DataSync
                         userStore.replaceAll(reply.asUsers());
                     }
                 break;
-
+                
             case "createUser":
             case "updateUserInfo":
-            case "getUser":
+            case "updateUserPrivileges":
+            case "getUserByUsername":
+            case "updatePassword":
+            case "getUserByID":
                 if( userStore !=null){
                     Models.User user = reply.asUser();
                     if (user != null)

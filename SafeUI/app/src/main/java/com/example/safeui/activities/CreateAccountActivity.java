@@ -6,25 +6,30 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-
+import com.example.safeui.http_handler.DataSync;
+import com.example.safeui.http_handler.InventoryStore;
+import com.example.safeui.http_handler.Models;
 import com.example.safeui.DatabaseHelper;
 import com.example.safeui.R;
 
-public class CreateAccountActivity extends AppCompatActivity {
+public class CreateAccountActivity extends AppCompatActivity implements DataSync.Listener {
     private EditText editUsername;
     private EditText editPassword;
     private EditText editConfirmPassword;
-    private DatabaseHelper databaseHelper;
+    private EditText editEmail;
+
+    private DataSync sync;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_account);
-
-        databaseHelper = new DatabaseHelper(this);
+        //will set up connection with sync/server. 
+        sync = new DataSync(this);
 
         editUsername = findViewById(R.id.editUsername);
         editPassword = findViewById(R.id.editPassword);
+        editEmail = findViewById(R.id.editTextEmail);
         editConfirmPassword = findViewById(R.id.editConfirmPassword);
 
         Button buttonCreateAccount = findViewById(R.id.buttonCreateAccount);
@@ -36,8 +41,9 @@ public class CreateAccountActivity extends AppCompatActivity {
         String username = editUsername.getText().toString().trim();
         String password = editPassword.getText().toString();
         String confirmPassword = editConfirmPassword.getText().toString();
+        String email = editEmail.getText().toString();
 
-        if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+        if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() || email.isEmpty()) {
             Toast.makeText(this, "Please fill in all fields.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -57,15 +63,23 @@ public class CreateAccountActivity extends AppCompatActivity {
             return;
         }
 
-        boolean success = databaseHelper.createUser(username, password);
+        sync.createUser(username,email, password);
+    }
 
-        if (success) {
-            Toast.makeText(this, "Account created. Please log in.", Toast.LENGTH_LONG).show();
-
-            finish();
-        } else {
-            Toast.makeText(this, "Account could not be created. " + "The username may already exist.", Toast.LENGTH_LONG).show();
+    @Override 
+    public void onReply(Models.Reply reply){
+        if("createUser".equals(reply.command)){
+            //if created user succesfully, will create a success message and send to log in page.
+                Toast.makeText(this, "Account created. Please log in.", Toast.LENGTH_LONG).show();
+                finish();
         }
     }
+
+    @Override 
+    public void onError(String message){
+        //should be the only reason to receive an Error from the server.
+        Toast.makeText(this,  "ERROR: username/email may already be in use", Toast.LENGTH_SHORT).show();
+    }
+
 }
 

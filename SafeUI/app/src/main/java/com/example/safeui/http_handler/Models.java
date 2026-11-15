@@ -42,6 +42,7 @@ public class Models
         public JsonElement inventory;
         public JsonElement history;
         public JsonElement users;
+        public JsonElement user;
         public Integer item_id; // Not sure why its here, but will keep just in case for now
         public Integer user_id; 
     
@@ -72,13 +73,14 @@ public class Models
         }
 
         //Will do like inventory where option to return 1 user and then multiple users
+        // server returns it as user if singular, and users if multiple.
         public User asUser()
         {
-            if (users == null || !users.isJsonObject())
+            if (user == null || !user.isJsonObject())
             {
                 return null;
             }
-            return GSON.fromJson(user, user.class);
+            return GSON.fromJson(user, User.class);
 
 
 
@@ -86,7 +88,7 @@ public class Models
 
         public List<User> asUsers()
         {
-            if(users = null ||!users.isJsonArray())
+            if(users == null || !users.isJsonArray())
             {
                 return new ArrayList();
             }

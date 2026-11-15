@@ -8,7 +8,7 @@ import com.example.safeui.DatabaseHelper;
 import java.util.List;
 
 
-public class UserStore implements DataSync.UserLocalUsers {
+public class UserStore implements DataSync.UserLocalStore {
 
     private static final String TABLE = "users";
 

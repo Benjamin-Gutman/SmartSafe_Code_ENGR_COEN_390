@@ -125,7 +125,7 @@ def build_command_parser() -> SocketArgumentParser:
     p.add_argument("--user_id", type=int, required=True)
 
     p = sub.add_parser("verifyUser", help= "for verifying a user", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--name", required=True)
+    p.add_argument("--username", required=True)
     p.add_argument("--password")
 
 #--------------------------------------------------------------------
@@ -250,16 +250,16 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             )
             return ok(cmd, message="User created", user=user_to_dict(user))
     
-        if cmd == "getUserById":
+        if cmd == "getUserByID":
             user = db_helper.get_user(db, args.user_id)
             if user is None:
                 return error(f"User {args.user_id} not found", cmd)
             return ok(cmd, user=user_to_dict(user))
 
         if cmd == "getUserByUsername":
-            user = db_helper.get_user(db, args.username)
+            user = db_helper.get_user_by_username(db, args.username)
             if user is None:
-                return error(f"User {args.user_id} not found", cmd)
+                return error(f"User {args.username} not found", cmd)
             return ok(cmd, user=user_to_dict(user))
     
         if cmd == "listUsers":
@@ -283,7 +283,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
 
         if cmd == "updatePassword" :
             update = db_helper.update_user_password(
-                user_id=args.user_id, new_password= args.new_password
+                user_id=args.user_id, new_password= args.newpassword
             )
             
             if user is None:
@@ -298,14 +298,14 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             return ok(cmd, message=f"User {args.user_id} deleted", user_id=args.user_id)
 
         if cmd == "verifyUser":
-            login = UserLogin(username=args.name, password=args.password)
+            login = UserLogin(username=args.username, password=args.password)
             verification = db_helper.verify_login(db, login)
             if verification is None:
-                return error(f"User {args.name} not found", cmd)
+                return error(f"User {args.username} not found", cmd)
             if verification == True :
-                return ok(cmd, message=f"User {args.name} is verified with this Password")
+                return ok(cmd, message=f"User {args.username} is verified with this Password")
             else : 
-                return ok(cmd, message=f"User {args.name} could not be verified with this Password")  
+                return ok(cmd, message=f"User {args.username} could not be verified with this Password")  
         
 
 #--------------------------------------------------------------------
@@ -334,7 +334,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             update = AccessHistoryUpdate( user_id = args.user_id, changes_made=args.changes_made, timestamp=args.timestamp)
             entry = db_helper.update_access_history(db, args.access_id, update)
             if entry is None:
-                return error(f"Entry {args.entry_id} not found", cmd)
+                return error(f"Entry {args.access_id} not found", cmd)
             return ok(cmd, message="Access history  updated", access_history=access_history_to_dict(entry))
 
         if cmd == "deleteAccessHistory":
