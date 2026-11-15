@@ -1,11 +1,15 @@
 import argparse
 import asyncio
 import json
+import re
 import shlex
 import pydantic
 from contextlib import contextmanager
+from pydantic import BaseModel
+from argparseCommands import SocketArgumentParser, CommandError, build_command_parser
 
 import websockets
+from websockets.sync.client import connect
 from sqlalchemy.orm import sessionmaker
  
 import DatabaseHelper as db_helper
@@ -17,151 +21,32 @@ from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, Acc
  
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
-class CommandError(Exception):
-   #Raised for bad commands or when argparse wants to exit.
- 
-    def __init__(self, message: str, is_help: bool = False):
-        super().__init__(message)
-        self.message = message
-        self.is_help = is_help
- 
- 
-class SocketArgumentParser(argparse.ArgumentParser):
-    _output: list[str] = []
- 
-    def _print_message(self, message, file=None):
-        # Capture help text instead of printing it to the console.
-        if message:
-            SocketArgumentParser._output.append(message)
- 
-    def error(self, message):
-        raise CommandError(message)
- 
-    def exit(self, status=0, message=None):
-        text = "".join(SocketArgumentParser._output)
-        SocketArgumentParser._output = []
-        if message:
-            text += message
-        raise CommandError(text.strip(), is_help=(status == 0))
+class Status(BaseModel):
+    isLocked: bool = True
+    isOpen: bool = False
+    alarm: bool = False
+doorStatus = Status()
 
-def str2bool(v):
-    if isinstance(v, bool):
-        return v
-    v = v.strip().lower()
-    if v in ("true", "t", "yes", "y", "1"):
-        return True
-    if v in ("false", "f", "no", "n", "0"):
-        return False
-    raise argparse.ArgumentTypeError(f"Boolean value expected, got {v!r}")
- 
- # reads stuff from the Commands.java file in the android App.
-def build_command_parser() -> SocketArgumentParser:
-    parser = SocketArgumentParser(prog="", description="Inventory websocket commands", formatter_class=argparse.RawTextHelpFormatter)
-    sub = parser.add_subparsers(dest="command", required=True)
+def syncStatus(): #sync doorStatus with HW program
+    # Establish a persistent connection to the server
+    with connect("ws://localhost:8766") as websocket:
+        websocket.send("status")
+        response = websocket.recv()
 
-    #inventory related commands
-    p = sub.add_parser("create", help="create a new inventory item", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--name", required=True, help="item name")
-    p.add_argument("--quantity", type=int, required=True, help="initial quantity (> 0)")
- 
-    p = sub.add_parser("add", help="add quantity to an item", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("item_id", type=int)
-    p.add_argument("quantity", type=int)
- 
-    p = sub.add_parser("remove", help="remove quantity from an item", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("item_id", type=int)
-    p.add_argument("quantity", type=int)
- 
-    p = sub.add_parser("get", help="get one item", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("item_id", type=int)
- 
-    sub.add_parser("list", help="list all items", formatter_class=argparse.RawTextHelpFormatter)
- 
-    p = sub.add_parser("update", help="set an item's name and quantity", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("item_id", type=int)
-    p.add_argument("--name", required=True)
-    p.add_argument("--quantity", type=int, required=True)
- 
-    p = sub.add_parser("delete", help="delete an item", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("item_id", type=int)
- 
-    p = sub.add_parser("history", help="show inventory history", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--item-id", type=int, default=None, help="filter by item id")
+        state = json.loads(response)
 
-    #User table related commands
-    p = sub.add_parser("createUser", help= "create user", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--name", required=True)
-    p.add_argument("--email") 
-    p.add_argument("--password")
-    p.add_argument("--isAdmin", type=str2bool)
-    p.add_argument("--hasOpenDoorPrivilege",type=str2bool)
+       # state = {k: v.lower() == "true" for k, v in re.findall(r"(\w+)\s*:\s*(\w+)", response)}
+        doorStatus.isLocked = state["locked"]
+        doorStatus.isOpen = state["open"]
+        doorStatus.alarm = state["alarm"]
 
-    p = sub.add_parser("getUserByID", help= "get user using their ID", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("user_id", type=int)
-
-    p = sub.add_parser("getUserByUsername", help= "get user using their Username", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("username")
-
-    p = sub.add_parser("listUsers", help= "get list of users", formatter_class=argparse.RawTextHelpFormatter)
-
-    p = sub.add_parser("updateUserInfo", help= "update a user's parameters(name, email)", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--user_id", type=int, required=True)
-    p.add_argument("--name", required=True)
-    p.add_argument("--email") 
-    p.add_argument("--isAdmin", type=str2bool, required=True)
-    p.add_argument("--hasOpenDoorPrivilege", type=str2bool)
-    p.add_argument("--password")
-
-    p = sub.add_parser("updatePassword", help= "update a user's password", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--UserID", type=int, required=True)
-    p.add_argument("--newpassword", required = True)
-
-    p = sub.add_parser("updateUserPrivileges", help= "update a user's priviledges(Admin rights, SafeDoor rights)", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--user_id", type=int, required=True)
-    p.add_argument("--isAdmin", type=str2bool, required=True)
-    p.add_argument("--hasOpenDoorPrivilege", type=str2bool)
-
-    p = sub.add_parser("deleteUser", help= "Delete a user using their ID", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--user_id", type=int, required=True)
-
-    p = sub.add_parser("verifyUser", help= "for verifying a user", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--username", required=True)
-    p.add_argument("--password")
-
-#--------------------------------------------------------------------
-#User Access history part (NOT COMPLETE NOR FUNCTIONAL)
-#--------------------------------------------------------------------
-    p = sub.add_parser("createAccess", help= "Create an entry of Access", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--user_id", type=int, required=True)
-    p.add_argument("--changes_made")
-    p.add_argument("--timestamp")
-
-    p = sub.add_parser("getAccessHistory", help= "Retrieve a specific Access entry", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--access_id", type=int, required=True)
-
-    p = sub.add_parser("getAccessList", help= "Retrieve Access List", formatter_class=argparse.RawTextHelpFormatter)
-
-    p = sub.add_parser("updateAccessHistory", help= "Update a specific Access entry", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--access_id", type=int, required=True)
-    p.add_argument("--user_id" )
-    p.add_argument("--changes_made" )
-    p.add_argument("--timestamp")
-
-    p = sub.add_parser("deleteAccessHistory", help= "Deletes a specific Access entry", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--access_id", type=int, required=True)
-
-    p = sub.add_parser("getAccessHistoryByUser", help= "Retrieve access history for specific user", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--user_id", type=int, required=True)
-
-
-    sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)
-    return parser
- 
+def sendHW(msg): #sync doorStatus with HW program
+    with connect("ws://localhost:8766") as websocket:
+        websocket.send(msg)
  
 # Serialization helpers
 def item_to_dict(item) -> dict:
     return InventoryResponse.model_validate(item).model_dump(mode="json")
- 
  
 def history_to_dict(entry) -> dict:
     return InventoryHistoryResponse.model_validate(entry).model_dump(mode="json")
@@ -169,14 +54,14 @@ def history_to_dict(entry) -> dict:
 def user_to_dict(user) -> dict:
     return UserResponse.model_validate(user).model_dump(mode = "json")
 
-
 def access_history_to_dict(access) -> dict:
     return AccessHistoryResponse.model_validate(access).model_dump(mode = "json")
- 
+
+def status_to_dict(status) -> dict:
+    return Status.model_validate(status).model_dump(mode = "json")
  
 def ok(command: str, **payload) -> dict:
     return {"status": "ok", "command": command, **payload}
- 
  
 def error(message: str, command: str | None = None) -> dict:
     return {"status": "error", "command": command, "message": message}
@@ -243,7 +128,9 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             entries = db_helper.get_inventory_history(db, args.item_id)
             return ok(cmd, history=[history_to_dict(e) for e in entries])
 
-        # User database commands (will always have keyword User)
+#--------------------------------------------------------------------
+# User database commands (will always have keyword User)
+#--------------------------------------------------------------------
         if cmd == "createUser":
             user = db_helper.create_user(
                 db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=args.isAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrivilege)
@@ -305,8 +192,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             if verification == True :
                 return ok(cmd, message=f"User {args.username} is verified with this Password")
             else : 
-                return ok(cmd, message=f"User {args.username} could not be verified with this Password")  
-        
+                return ok(cmd, message=f"User {args.name} could not be verified with this Password")
 
 #--------------------------------------------------------------------
 #User Access history part (NOT COMPLETE NOR FUNCTIONAL)
@@ -349,6 +235,30 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             entries = db_helper.get_access_history_by_user(db, args.user_id)
             return ok(cmd, access_history = [access_history_to_dict(i) for i in entries])
 
+#--------------------------------------------------------------------
+#HW management part (NOT COMPLETE)
+#--------------------------------------------------------------------
+
+#HW communication
+        if cmd == "giveStatus": #will be changed later when scanning is implemented
+            doorStatus.isLocked = args.isLocked
+            doorStatus.isOpen = args.isOpen
+            doorStatus.alarm = args.alarm
+            return ok(cmd, message="status updated")
+    
+#Android comunication
+
+        if cmd == "getStatus":
+            return ok(cmd, doorStatus=status_to_dict(doorStatus))
+
+        if cmd == "lockDoor":
+            sendHW("lock")
+            return ok(cmd, message="command sent")
+
+        if cmd == "unlockDoor": #will require user_id later
+            sendHW("unlock")
+            return ok(cmd, message="command sent")
+        
  
     return error(f"Unhandled command '{cmd}'", cmd)
 
@@ -393,7 +303,9 @@ async def main(host: str, port: int) -> None:
         print(f"Inventory websocket listening on ws://{host}:{port}")
         await asyncio.Future()  # run forever
 
+
 try:
+    # syncStatus() #only run when testing with HW program
     asyncio.run(main("0.0.0.0", 8765))
 except KeyboardInterrupt:
     print("Server stopped")

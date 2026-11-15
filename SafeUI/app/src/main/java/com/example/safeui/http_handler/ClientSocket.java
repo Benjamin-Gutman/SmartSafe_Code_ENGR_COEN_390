@@ -1,10 +1,14 @@
 package com.example.safeui.http_handler;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import androidx.annotation.NonNull;
 
 import com.google.gson.Gson;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -13,16 +17,12 @@ import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 
-// DO NOT TOUCH UNLESS THERE'S A NETWORK ISSUE OR CHANGE //
-
 public class ClientSocket
 {
-    private ClientSocket() {}
-
     private static final String URL = "ws://100.93.188.101:8765";
-
-    // TAILSCALE IP
-    // private static final String URL = "ws://100.93.188.101:8765";
+    private static final long REPLY_TIMEOUT_MS = 30_000;
+    private static final Gson GSON = new Gson();
+    private static final ClientSocket INSTANCE = new ClientSocket();
 
     public interface ReplyCallback
     {
@@ -30,81 +30,151 @@ public class ClientSocket
         void onFailure(Throwable error);
     }
 
-    private static final Gson GSON = new Gson();
-    private static final ClientSocket INSTANCE = new ClientSocket();
+    private final WebSocket.Factory socketFactory;
+    private final Handler timeoutHandler;
+    private final String url;
+    private final long replyTimeoutMs;
+    private WebSocket socket;
+    private PendingCommand pending; // At most one request, as before.
+
+    private static class PendingCommand
+    {
+        final WebSocket socket;
+        final ReplyCallback callback;
+        Runnable timeout;
+
+        PendingCommand(WebSocket socket, ReplyCallback callback)
+        {
+            this.socket = socket;
+            this.callback = callback;
+        }
+    }
+
+    private ClientSocket()
+    {
+        this(new OkHttpClient.Builder()
+                        .connectTimeout(10, TimeUnit.SECONDS)
+                        .readTimeout(0, TimeUnit.SECONDS)
+                        .pingInterval(20, TimeUnit.SECONDS)
+                        .build(),
+                new Handler(Looper.getMainLooper()), URL, REPLY_TIMEOUT_MS);
+    }
+
+    // Tests supply a fake socket and advance the Android clock. No real Pi or
+    // background timer thread is needed to check timeout/reconnect behavior.
+    ClientSocket(WebSocket.Factory socketFactory, Handler timeoutHandler,
+                 String url, long replyTimeoutMs)
+    {
+        if (socketFactory == null || timeoutHandler == null || url == null
+                || replyTimeoutMs <= 0)
+            throw new IllegalArgumentException("Invalid socket configuration");
+        this.socketFactory = socketFactory;
+        this.timeoutHandler = timeoutHandler;
+        this.url = url;
+        this.replyTimeoutMs = replyTimeoutMs;
+    }
 
     public static ClientSocket get()
     {
         return INSTANCE;
     }
 
-    private final OkHttpClient client = new OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(0, TimeUnit.SECONDS)     // no read timeout on a long-lived socket
-            .pingInterval(20, TimeUnit.SECONDS)   // detect dead connections
-            .build();
-
-    private WebSocket socket;
-    private ReplyCallback pending; // at most one command in flight
-
     public synchronized void connect()
     {
-        if (socket != null) return;
-        Request request = new Request.Builder().url(URL).build();
-        socket = client.newWebSocket(request, new Listener());
+        if (socket == null)
+            socket = socketFactory.newWebSocket(
+                    new Request.Builder().url(url).build(), new Listener());
     }
 
-    public synchronized void send(String commandLine, ReplyCallback callback)
+    public void send(String commandLine, ReplyCallback callback)
     {
-        if (pending != null)
+        final PendingCommand command;
+        try
         {
-            callback.onFailure(new IllegalStateException("Command already in flight"));
+            command = beginCommand(callback);
+        }
+        catch (RuntimeException error)
+        {
+            callback.onFailure(error);
             return;
         }
-        connect();
-        pending = callback;
-        if (!socket.send(commandLine))
+
+        try
         {
-            pending = null;
-            socket = null; // next send() reconnects
-            callback.onFailure(new IOException("Socket closed"));
+            if (!command.socket.send(commandLine))
+                handleDisconnect(command.socket, new IOException("Socket closed"));
         }
+        catch (RuntimeException error)
+        {
+            handleDisconnect(command.socket, error);
+        }
+    }
+
+    private synchronized PendingCommand beginCommand(ReplyCallback callback)
+    {
+        if (pending != null)
+            throw new IllegalStateException("Command already in flight");
+        connect();
+        PendingCommand command = new PendingCommand(socket, callback);
+        command.timeout = () -> expire(command);
+        pending = command;
+        timeoutHandler.postDelayed(command.timeout, replyTimeoutMs);
+        return command;
+    }
+
+    // Called only while holding this object's lock. Detaching and cancelling
+    // together prevents an older callback from clearing a newer request.
+    private PendingCommand takePendingLocked()
+    {
+        PendingCommand command = pending;
+        pending = null;
+        if (command != null) timeoutHandler.removeCallbacks(command.timeout);
+        return command;
+    }
+
+    private void expire(PendingCommand expected)
+    {
+        final PendingCommand command;
+        synchronized (this)
+        {
+            if (pending != expected) return;
+            command = takePendingLocked();
+            socket = null;
+        }
+
+        // Replies contain no request ID. Discard the timed-out connection so
+        // its late reply cannot be mistaken for the next command's reply.
+        command.socket.cancel();
+        command.callback.onFailure(new SocketTimeoutException(
+                "Server reply timed out. Please retry."));
     }
 
     public void close()
     {
-        WebSocket old;
+        final WebSocket old;
+        final PendingCommand command;
         synchronized (this)
         {
             old = socket;
             socket = null;
+            command = takePendingLocked();
         }
         if (old != null) old.close(1000, "bye");
-        failPending(new IOException("Connection closed"));
+        if (command != null)
+            command.callback.onFailure(new IOException("Connection closed"));
     }
 
-    private synchronized ReplyCallback takePending()
+    private void handleDisconnect(WebSocket ws, Throwable error)
     {
-        ReplyCallback cb = pending;
-        pending = null;
-        return cb;
-    }
-
-    private void failPending(Throwable t)
-    {
-        ReplyCallback cb = takePending();
-        if (cb != null) cb.onFailure(t);
-    }
-
-    // Ignores events from a socket that has already been replaced or closed.
-    private void handleDisconnect(WebSocket ws, Throwable t)
-    {
+        final PendingCommand command;
         synchronized (this)
         {
             if (ws != socket) return;
-            socket = null; // next send() reconnects
+            socket = null;
+            command = takePendingLocked();
         }
-        failPending(t);
+        ws.cancel();
+        if (command != null) command.callback.onFailure(error);
     }
 
     private class Listener extends WebSocketListener
@@ -112,28 +182,33 @@ public class ClientSocket
         @Override
         public void onMessage(@NonNull WebSocket ws, @NonNull String text)
         {
-            ReplyCallback cb = takePending();
-            if (cb == null) return; // unexpected message, nothing waiting for it
+            final PendingCommand command;
+            synchronized (ClientSocket.this)
+            {
+                if (ws != socket) return; // Late message from an old connection.
+                command = takePendingLocked();
+            }
+            if (command == null) return;
+
+            final Models.Reply reply;
             try
             {
-                Models.Reply reply = GSON.fromJson(text, Models.Reply.class);
-                if (reply == null)
-                {
-                    cb.onFailure(new IOException("Empty reply"));
-                    return;
-                }
-                cb.onReply(reply);
+                reply = GSON.fromJson(text, Models.Reply.class);
+                if (reply == null) throw new IOException("Empty reply");
             }
-            catch (Exception e)
+            catch (Exception error)
             {
-                cb.onFailure(e);
+                command.callback.onFailure(error);
+                return;
             }
+            command.callback.onReply(reply);
         }
 
         @Override
-        public void onFailure(@NonNull WebSocket ws, @NonNull Throwable t, Response response)
+        public void onFailure(@NonNull WebSocket ws, @NonNull Throwable error,
+                              Response response)
         {
-            handleDisconnect(ws, t);
+            handleDisconnect(ws, error);
         }
 
         @Override

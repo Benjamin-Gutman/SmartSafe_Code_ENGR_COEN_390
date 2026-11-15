@@ -30,6 +30,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    testOptions {
+        unitTests.all {
+            it.jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED", "--add-opens=java.base/java.util=ALL-UNNAMED")
+        }
+    }
 }
 
 dependencies {
@@ -41,6 +46,7 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.okhttp)
     testImplementation(libs.junit)
+    testImplementation("org.robolectric:robolectric:4.17")
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
 }
