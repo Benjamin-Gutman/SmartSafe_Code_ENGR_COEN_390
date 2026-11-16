@@ -1,7 +1,5 @@
 package com.example.safeui.http_handler;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
 import com.example.safeui.DatabaseHelper;
@@ -47,7 +45,6 @@ public class UserStore implements DataSync.UserLocalStore {
         if (users == null){
             return; //dont know why this would happen, but just in case so it wont crash.
         }
-
         db.beginTransaction();
 
          try
@@ -58,32 +55,31 @@ public class UserStore implements DataSync.UserLocalStore {
                     writeUser(db, user);
                 }
             }
-
-
-
-            // Remove users that no longer exist on the server
-            if (users.isEmpty())
-            {
-                db.delete(TABLE, null, null);
-            }
-            else
-            {
                 //needs to do it like this so that SQLiteDatabase can properly delete users. 
-                // NOT IN(users that are actually still in server) --> will delete those that are NOT IN those basically. 
-                StringBuilder selection = new StringBuilder("id NOT IN (");
-                String[] args = new String[users.size()];
-                for (int i = 0; i < users.size(); i++)
-                {
-                    if (i > 0){
-                        selection.append(",");
-                    }
-                    selection.append("?");
-                    args[i] = String.valueOf(users.get(i).user_id);
+                // NOT IN(users that are actually still in server) --> will delete those that are NOT IN those basically.
+                List<Models.User> validUsers = new java.util.ArrayList<>();
+
+                for(Models.User user : users){
+                    if (user != null)
+                        validUsers.add(user);
                 }
+                // Remove users that no longer exist on the server
+                if(validUsers.isEmpty()){
+                    db.delete(TABLE, null,null);
+                }
+                else {
+                    StringBuilder selection = new StringBuilder("id NOT IN (");
+                    String[] args = new String [validUsers.size()];
+
+                    for (int i =0; i<validUsers.size(); i++){
+                        if (i>0)
+                            selection.append(",");
+                        selection.append("?");
+                        args[i] = String.valueOf(validUsers.get(i).user_id);
+                    }
                 selection.append(")");
                 db.delete(TABLE, selection.toString(), args);
             }
-            
             db.setTransactionSuccessful();
         }
         finally

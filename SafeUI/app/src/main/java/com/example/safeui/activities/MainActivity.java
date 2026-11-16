@@ -35,16 +35,21 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
         }
 
         databaseHelper = new DatabaseHelper(this);
+        InventoryStore inventoryStore = new InventoryStore(databaseHelper);
+        UserStore userStore = new UserStore(databaseHelper);
+
+        sync = new DataSync(this, inventoryStore, null, userStore);
+        sync.getUserByUsername(username);
 
         Button buttonInventory = findViewById(R.id.buttonInventory);
         Button buttonUserHistory = findViewById(R.id.buttonUserHistory);
         Button buttonOpenSafe = findViewById(R.id.buttonOpenSafe);
         Button buttonAccount = findViewById(R.id.buttonAccount);
-        buttonManageUsers = findViewById(R.id.buttonManageUsers);
 
-        // Only show Manage Users to administrators., will check with server and then in the OnReply will set the visibility of the button. 
-        sync = new DataSync(this, new InventoryStore(databaseHelper), new UserStore(databaseHelper));
-        sync.getUserByUsername(username);
+        buttonManageUsers = findViewById(R.id.buttonManageUsers);
+        buttonManageUsers.setVisibility(android.view.View.GONE);
+
+        // Only show Manage Users to administrators., will check with server and then in the OnReply will set the visibility of the button.
 
 
         //boolean isAdmin = databaseHelper.isAdmin(username);
@@ -95,26 +100,19 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
                 .show();
     }
 
-
-
-
     @Override 
     public void onReply(Models.Reply reply){
-        if("getUserByUsername".equals(reply.command)){
+        if("getUserByUsername".equals(reply.command)) {
             // will only show the button for manage users if user is an admin...
-                Models.User user = reply.asUser();
-            //Toast.makeText(this,  "Received User" + user.username, Toast.LENGTH_SHORT).show();
-                if (user == null){
-                    Toast.makeText(this,  "no user returned", Toast.LENGTH_SHORT).show();
-                }
-                if (user != null && user.isAdmin){
-                    isAdminFlag= true;
-                    buttonManageUsers.setVisibility(android.view.View.VISIBLE);
-                }else{
-                    buttonManageUsers.setVisibility(android.view.View.GONE);
-                   // buttonManageUsers.setVisibility(android.view.View.VISIBLE );
-                }
+            Models.User user = reply.asUser();
+
+            isAdminFlag = user != null && user.isAdmin;
+            if (isAdminFlag) {
+                buttonManageUsers.setVisibility(android.view.View.VISIBLE);
+            } else {
+                buttonManageUsers.setVisibility(android.view.View.GONE);
             }
+        }
     }
     
     @Override 
