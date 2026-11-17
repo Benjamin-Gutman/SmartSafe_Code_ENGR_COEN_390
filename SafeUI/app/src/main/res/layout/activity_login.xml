@@ -41,21 +41,25 @@
             android:id="@+id/editLoginUsername"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:autofillHints="username"
             android:hint="Username"
             android:inputType="text"
-            android:autofillHints="username"
             android:singleLine="true"
-            android:layout_marginBottom="12dp" />
+            android:textColor="@color/black"
+            android:textColorHint="#666464" />
 
         <EditText
             android:id="@+id/editLoginPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:autofillHints="password"
             android:hint="Password"
             android:inputType="textPassword"
-            android:autofillHints="password"
             android:singleLine="true"
-            android:layout_marginBottom="24dp" />
+            android:textColor="@color/black"
+            android:textColorHint="#666464" />
 
         <Button
             android:id="@+id/buttonLogin"
