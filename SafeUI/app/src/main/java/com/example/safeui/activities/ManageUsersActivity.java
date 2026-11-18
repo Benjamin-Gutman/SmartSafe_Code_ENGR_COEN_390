@@ -78,10 +78,7 @@ public class ManageUsersActivity extends AppCompatActivity {
                 name.setText(username);
                 name.setTextSize(18);
                 name.setTextColor(0xFF202020);
-                name.setTypeface(
-                        null,
-                        android.graphics.Typeface.BOLD
-                );
+                name.setTypeface(null, android.graphics.Typeface.BOLD);
                 row.addView(name);
 
                 TextView roleLabel = new TextView(this);
@@ -92,6 +89,12 @@ public class ManageUsersActivity extends AppCompatActivity {
 
                 CheckBox permission = new CheckBox(this);
                 permission.setText("Can open safe");
+                permission.setTextColor(0xFF202020);
+                permission.setChecked(canOpenSafe);
+                row.addView(permission);
+
+                CheckBox permissionUser = new CheckBox(this);
+                permission.setText("Has Admin priviledge");
                 permission.setTextColor(0xFF202020);
                 permission.setChecked(canOpenSafe);
                 row.addView(permission);
