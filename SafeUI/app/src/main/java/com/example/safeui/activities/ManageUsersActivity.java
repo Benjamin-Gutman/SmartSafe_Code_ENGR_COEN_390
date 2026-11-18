@@ -105,11 +105,24 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
                 permission.setTextColor(0xFF202020);
                 permission.setChecked(canOpenSafe);
                 row.addView(permission);
+
+                CheckBox permissionAdmin = new CheckBox(this);
+                permission.setText("Give Admin permission");
+                permission.setTextColor(0xFF202020);
+                permission.setChecked(user.isAdmin);
+                row.addView(permissionAdmin);
+
 //-----------------------------------------------------------------
 
                 //check mark button to give safe permissions
                 permission.setOnCheckedChangeListener(
-                    (button, checked) -> updatePermission((CheckBox) button,userId,checked,user.isAdmin)
+                    (button, checked) -> updatePermission((CheckBox) button,user,checked,false)
+                );
+                //userList.addView(row);
+
+                //check mark button to give admin permission
+                permissionAdmin.setOnCheckedChangeListener(
+                        (button, checked) -> updatePermission((CheckBox) button,user,checked,true)
                 );
                 userList.addView(row);
             }
@@ -137,11 +150,11 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
         }
     }
 
-    //functionality for checkbox to change safe permissions.
-    private void updatePermission(CheckBox button, int userId, boolean checked, boolean isAdmin) {
-
+    //functionality for checkbox to change permissions.
+    private void updatePermission(CheckBox button, Models.User user, boolean checked, boolean isAdmin) {
         if (permissionUpdatePending) { // if functions gets called while waiting for server response.
-        return;
+            button.setChecked(!checked);
+            return;
         }
 
         permissionUpdatePending = true;
@@ -151,7 +164,10 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
 
         button.setEnabled(false);
 
-        sync.updateUserPrivileges(userId, isAdmin, checked);
+        boolean newAdminPermission = isAdmin ? checked : user.isAdmin;
+        boolean newSafePermission = isAdmin ? user.hasOpenDoorPrivilege : checked;
+
+        sync.updateUserPrivileges(user.user_id, newAdminPermission, newSafePermission);
 
     }
 
