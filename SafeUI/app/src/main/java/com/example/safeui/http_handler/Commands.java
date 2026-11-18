@@ -57,13 +57,12 @@ public class Commands
         return "history --item-id " + item_id;
     }
 
-    // User commands
+    // ---------------------------User commands------------------------------
    public static String createUser(String username, String email,  String password)
    {
-
       // will by default give no admin nor door privilege
        //CHANGE HERE TO TRUE FOR TESTING IF YOU WANT
-        return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin true --hasOpenDoorPrivilege true" ;
+        return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin false --hasOpenDoorPrivilege false" ;
        
    }
 
