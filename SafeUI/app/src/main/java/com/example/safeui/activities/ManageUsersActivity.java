@@ -107,9 +107,9 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
                 row.addView(permission);
 
                 CheckBox permissionAdmin = new CheckBox(this);
-                permission.setText("Give Admin permission");
-                permission.setTextColor(0xFF202020);
-                permission.setChecked(user.isAdmin);
+                permissionAdmin.setText("Give Admin permission");
+                permissionAdmin.setTextColor(0xFF202020);
+                permissionAdmin.setChecked(user.isAdmin);
                 row.addView(permissionAdmin);
 
 //-----------------------------------------------------------------

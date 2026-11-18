@@ -62,7 +62,7 @@ public class Commands
    {
       // will by default give no admin nor door privilege
        //CHANGE HERE TO TRUE FOR TESTING IF YOU WANT
-        return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin true --hasOpenDoorPrivilege true" ;
+        return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin false --hasOpenDoorPrivilege false" ;
        
    }
 
