@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 
 class Inventory(BaseModel):
+    item_barcode: str
     item_name: str
     quantity: int
 

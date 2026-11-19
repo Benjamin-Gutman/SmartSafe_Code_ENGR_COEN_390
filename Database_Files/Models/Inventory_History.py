@@ -36,6 +36,7 @@ class InventoryHistoryModel(Base):
     )
     # Keep history after an inventory item is deleted.
     item_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    item_barcode: Mapped[str] = mapped_column(String(100), nullable=False)
     item_name: Mapped[str] = mapped_column(String(100), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     action: Mapped[str] = mapped_column(String(20), nullable=False)
