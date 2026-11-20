@@ -70,14 +70,14 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
 
         // Case 2: Unlocked, open, alarm off
         else if (!safeStatus.isLocked && safeStatus.isOpen && !safeStatus.alarm) {
-            Toast.makeText(this,
-                    "The safe is already open.",
-                    Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "The safe is already open.", Toast.LENGTH_LONG).show();
         }
 
         // Case 3: Locked, open, alarm on
+        //this will be changed when we eventually get a check status regularly
         else if (safeStatus.isLocked && safeStatus.isOpen && safeStatus.alarm) {
-            Toast.makeText(this, "Unauthorized opening detected! Click Unlock to clear the alarm.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Unauthorized opening detected! Click Unlocking door to clear the alarm.", Toast.LENGTH_LONG).show();
+            sync.unlockDoor(userId);
         }
 
         else {
