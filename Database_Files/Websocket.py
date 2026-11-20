@@ -262,8 +262,8 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             if not user.hasOpenDoorPrivilege:
               return error("You have not been granted permission to open the safe.", cmd)
              
-        sendHW("unlock")
-        return ok(cmd, message="Unlock command sent")
+            sendHW("unlock")
+            return ok(cmd, message="Unlock command sent")
         
  
     return error(f"Unhandled command '{cmd}'", cmd)
