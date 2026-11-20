@@ -6,6 +6,9 @@
     android:padding="24dp"
     android:background="#F7F7F7">
 
+    <include
+        layout="@layout/view_safe_alert_banner" />
+
     <!-- App title -->
     <TextView
         android:layout_width="match_parent"

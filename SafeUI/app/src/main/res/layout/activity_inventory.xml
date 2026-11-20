@@ -9,6 +9,9 @@
     android:paddingTop="0dp"
     android:paddingBottom="16dp">
 
+    <include
+        layout="@layout/view_safe_alert_banner" />
+
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbarInventory"
         android:layout_width="match_parent"

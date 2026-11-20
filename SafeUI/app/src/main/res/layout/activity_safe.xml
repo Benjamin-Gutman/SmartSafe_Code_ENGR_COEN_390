@@ -8,6 +8,9 @@
     android:background="#F5F6F8"
     android:paddingBottom="16dp">
 
+    <include
+        layout="@layout/view_safe_alert_banner" />
+
     <TextView
         android:id="@+id/textManageSafeTitle"
         android:layout_width="match_parent"
@@ -51,7 +54,7 @@
         android:clipToPadding="false">
 
         <LinearLayout
-            android:id="@+id/layoutInventoryItems"
+            android:id="@+id/layoutSafeHistory"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"

@@ -14,6 +14,7 @@ import com.example.safeui.R;
 import com.example.safeui.http_handler.DataSync;
 import com.example.safeui.http_handler.InventoryStore;
 import com.example.safeui.http_handler.Models;
+import com.example.safeui.http_handler.SafeStatusMonitor;
 
 public class LoginActivity extends AppCompatActivity implements DataSync.Listener {
     private EditText editUsername;
@@ -71,6 +72,10 @@ public class LoginActivity extends AppCompatActivity implements DataSync.Listene
             if (!reply.message.contains("not")){//message will only contain not if user not found, so will only proceed if there isn't not in message
                 String username = editUsername.getText().toString().trim();
                 Toast.makeText(this, "Succesfully logged in, user: " + username , Toast.LENGTH_SHORT).show();
+
+                // Start monitoring the safe after successful login.
+                SafeStatusMonitor.getInstance().start(getApplicationContext());
+
                 Intent intent = new Intent( LoginActivity.this, MainActivity.class);
                 intent.putExtra("username", username);
                 startActivity(intent);

@@ -23,6 +23,7 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
     private Button buttonOpenSafe;
     private Button buttonBackHome;
 
+    private SafeAlertBanner safeAlertBanner;
     private boolean unlockPending = false;
 
     @Override
@@ -32,6 +33,7 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
 
         username = getIntent().getStringExtra("username");
         userId = getIntent().getIntExtra("user_id", -1);
+        safeAlertBanner = new SafeAlertBanner(this, username, userId);
 
         databaseHelper = new DatabaseHelper(this);
 
@@ -97,6 +99,24 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
                     "Unlock command sent to the safe.",
                     Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onResume();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onPause();
+        }
+
+        super.onPause();
     }
 
     @Override

@@ -24,8 +24,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
         public String event_time;
     }
 
-    private static final String TABLE =
-            DatabaseHelper.INVENTORY_HISTORY_CACHE;
+    private static final String TABLE = DatabaseHelper.INVENTORY_HISTORY_CACHE;
 
     private final DatabaseHelper helper;
 
