@@ -208,6 +208,12 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
     
     @Override 
     public void onError(String message){
+        permissionUpdatePending = false;
+        if (pendingPermissionCheckbox != null) {
+            pendingPermissionCheckbox.setEnabled(true);
+            pendingPermissionCheckbox.setChecked(previousPermission);
+            pendingPermissionCheckbox = null;
+        }
         Toast.makeText(this,  message, Toast.LENGTH_SHORT).show();
     }
 

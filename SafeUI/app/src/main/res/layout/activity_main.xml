@@ -54,7 +54,7 @@
         android:id="@+id/buttonOpenSafe"
         android:layout_width="match_parent"
         android:layout_height="72dp"
-        android:text="OPEN SAFE"
+        android:text="MANAGE SAFE"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"

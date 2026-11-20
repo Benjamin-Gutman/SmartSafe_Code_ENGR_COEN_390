@@ -21,6 +21,9 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
     private DataSync sync;
     private Button buttonManageUsers;
     private boolean isAdminFlag = false;
+    private boolean hasOpenDoorPrivilege = false;
+    private boolean userInfoLoaded = false;
+    private int currentUserId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,8 +67,18 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
         buttonUserHistory.setOnClickListener(v -> Toast.makeText(this, "User history screen coming next.", Toast.LENGTH_SHORT).show());
 
         //Open safe button
-        buttonOpenSafe.setOnClickListener(v -> {if (databaseHelper.isAdmin(username) || databaseHelper.hasSafeAccess(username)) {
-                Toast.makeText(this, "Access authorized. Safe hardware " + "control will be added later.", Toast.LENGTH_LONG).show();
+        buttonOpenSafe.setOnClickListener(v -> {
+            if (!userInfoLoaded) {
+                Toast.makeText(this, "User information is still loading.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (hasOpenDoorPrivilege) {
+                Intent intent = new Intent(MainActivity.this, SafeActivity.class);
+                intent.putExtra("username", username);
+                intent.putExtra("user_id", currentUserId);
+                startActivity(intent);
+
             } else {
                 Toast.makeText(this, "You have not been granted safe access.", Toast.LENGTH_LONG).show();
             }
@@ -106,11 +119,13 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
             // will only show the button for manage users if user is an admin...
             Models.User user = reply.asUser();
 
-            isAdminFlag = user != null && user.isAdmin;
-            if (isAdminFlag) {
-                buttonManageUsers.setVisibility(android.view.View.VISIBLE);
-            } else {
-                buttonManageUsers.setVisibility(android.view.View.GONE);
+            if (user != null) {
+                currentUserId = user.user_id;
+                isAdminFlag = user.isAdmin;
+                hasOpenDoorPrivilege = user.hasOpenDoorPrivilege;
+                userInfoLoaded = true;
+                buttonManageUsers.setVisibility(isAdminFlag ? android.view.View.VISIBLE : android.view.View.GONE);
+
             }
         }
     }
