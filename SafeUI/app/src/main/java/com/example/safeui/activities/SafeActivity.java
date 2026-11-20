@@ -43,7 +43,7 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
         buttonOpenSafe = findViewById(R.id.buttonOpenSafe);
         buttonBackHome = findViewById(R.id.buttonBackHome);
 
-        buttonOpenSafe.setOnClickListener(v -> openSafe());
+        buttonOpenSafe.setOnClickListener(v -> sync.getStatus());
 
         buttonBackHome.setOnClickListener(v -> finish());
 
@@ -53,30 +53,49 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
         }
     }
 
-    private void openSafe() {
-        if (unlockPending) {return;}
+    private void handleSafeStatus(Models.SafeStatus safeStatus) {
+        if (safeStatus == null
+                || safeStatus.isLocked == null
+                || safeStatus.isOpen == null
+                || safeStatus.alarm == null) {
 
-        if (userId == -1) {
-            Toast.makeText(this, "Invalid user.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Could not retrieve the safe status.", Toast.LENGTH_LONG).show();
             return;
         }
 
-        unlockPending = true;
-        buttonOpenSafe.setEnabled(false);
-        buttonOpenSafe.setText("Sending request...");
+        // Case 1: Locked, closed, alarm off
+        if (safeStatus.isLocked && !safeStatus.isOpen && !safeStatus.alarm) {
+            sync.unlockDoor(userId);
+        }
 
-        sync.unlockDoor(userId);
+        // Case 2: Unlocked, open, alarm off
+        else if (!safeStatus.isLocked && safeStatus.isOpen && !safeStatus.alarm) {
+            Toast.makeText(this,
+                    "The safe is already open.",
+                    Toast.LENGTH_LONG).show();
+        }
+
+        // Case 3: Locked, open, alarm on
+        else if (safeStatus.isLocked && safeStatus.isOpen && safeStatus.alarm) {
+            Toast.makeText(this, "Unauthorized opening detected! Click Unlock to clear the alarm.", Toast.LENGTH_LONG).show();
+        }
+
+        else {
+            Toast.makeText(this, "The safe is in an unexpected state.", Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
     public void onReply(Models.Reply reply) {
-        if ("unlockDoor".equals(reply.command)) {
+        if ("getStatus".equals(reply.command)) {
+            Models.SafeStatus safeStatus = reply.asSafeStatus();
+            handleSafeStatus(safeStatus);
+        }
 
-            unlockPending = false;
-            buttonOpenSafe.setEnabled(true);
-            buttonOpenSafe.setText("Open Safe");
-
-            Toast.makeText(this, "Unlock command sent to the safe.", Toast.LENGTH_LONG).show();
+        else if ("unlockDoor".equals(reply.command)) {
+            Toast.makeText(this,
+                    "Unlock command sent to the safe.",
+                    Toast.LENGTH_LONG).show();
         }
     }
 

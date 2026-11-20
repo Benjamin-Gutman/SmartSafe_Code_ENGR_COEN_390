@@ -149,4 +149,7 @@ public class Commands
         return "unlockDoor --user_id " + user_id;
     }
 
+    public static String getStatus() {
+        return "getStatus";
+    }
 }

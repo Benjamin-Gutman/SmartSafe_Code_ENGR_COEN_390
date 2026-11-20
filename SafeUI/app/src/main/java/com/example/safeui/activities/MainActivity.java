@@ -21,6 +21,8 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
     private DataSync sync;
     private Button buttonManageUsers;
     private boolean isAdminFlag = false;
+    private boolean hasOpenDoorPrivilege = false;
+    private boolean userInfoLoaded = false;
     private int currentUserId = -1;
 
     @Override
@@ -66,14 +68,20 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
 
         //Open safe button
         buttonOpenSafe.setOnClickListener(v -> {
-            if (currentUserId == -1){
+            if (!userInfoLoaded) {
                 Toast.makeText(this, "User information is still loading.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            Intent intent = new Intent(MainActivity.this, SafeActivity.class);
-            intent.putExtra("username", username);
-            intent.putExtra("user_id", currentUserId);
-            startActivity(intent);
+
+            if (hasOpenDoorPrivilege) {
+                Intent intent = new Intent(MainActivity.this, SafeActivity.class);
+                intent.putExtra("username", username);
+                intent.putExtra("user_id", currentUserId);
+                startActivity(intent);
+
+            } else {
+                Toast.makeText(this, "You have not been granted safe access.", Toast.LENGTH_LONG).show();
+            }
         });
 
         //Manage user button
@@ -114,6 +122,8 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
             if (user != null) {
                 currentUserId = user.user_id;
                 isAdminFlag = user.isAdmin;
+                hasOpenDoorPrivilege = user.hasOpenDoorPrivilege;
+                userInfoLoaded = true;
                 buttonManageUsers.setVisibility(isAdminFlag ? android.view.View.VISIBLE : android.view.View.GONE);
 
             }

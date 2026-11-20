@@ -83,7 +83,7 @@ public class DataSync
 
     // ---- Commands (call from the UI; one at a time) ----
     
-    // Inventory
+    // ----------------------Inventory-------------------
 
     public void refreshAll()
     {
@@ -136,7 +136,7 @@ public class DataSync
     }
 
 
-    //User, will always have USER in it.
+    //------------User, will always have USER in it.---------------------
     public void createUser(String username, String email, String password)
     {
         run(Commands.createUser(username,email, password));
@@ -178,7 +178,7 @@ public class DataSync
     }
 
 
-    // User Access History related commands
+    // --------------User Access History related commands--------------
     public void getAccessHistory(int access_id)
     {
         run(Commands.getAccessHistory(access_id));
@@ -194,9 +194,12 @@ public class DataSync
         run(Commands.getAccessHistoryByUser(user_id));
     }
 
-    // Safe commands
+    // -------------------Safe commands--------------
     public void unlockDoor(int user_id){
         run(Commands.unlockDoor(user_id));
+    }
+    public void getStatus() {
+        run(Commands.getStatus());
     }
 
     // ---- Internals ----
