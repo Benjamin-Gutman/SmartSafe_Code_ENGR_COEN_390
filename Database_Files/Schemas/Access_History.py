@@ -1,13 +1,11 @@
-#for safe acces history
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typying import any
-
+from .Inventory_History import InventoryHistory
 
 class AccessHistory(BaseModel):
     user_id: int
-    changes_made: list[dict[str, Any]]
-    timestamp: datetime = FIeld (default_factory = lambda: datetime.now)
+    changes_made: list[InventoryHistory]
+    timestamp: datetime
 
 class AccessHistoryCreate(AccessHistory):
     pass
@@ -15,11 +13,9 @@ class AccessHistoryCreate(AccessHistory):
 class AccessHistoryUpdate(AccessHistory):
     access_id: int
 
-class AccessHistoryDelete(BaseModel):
+class AccessHistoryDelete(AccessHistory):
     access_id: int
 
 
 class AccessHistoryResponse(AccessHistory):
-    acces_id : int
-    username: str | None = None
     model_config = ConfigDict(from_attributes=True)
