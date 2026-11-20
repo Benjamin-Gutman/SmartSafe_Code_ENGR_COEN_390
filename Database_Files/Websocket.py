@@ -255,9 +255,15 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             sendHW("lock")
             return ok(cmd, message="command sent")
 
-        if cmd == "unlockDoor": #will require user_id later
-            sendHW("unlock")
-            return ok(cmd, message="command sent")
+        if cmd == "unlockDoor":
+            user = db_helper.get_user(db, args.user_id)
+            if user is None:
+              return error("User not found", cmd)
+            if not user.hasOpenDoorPrivilege:
+              return error("You have not been granted permission to open the safe.", cmd)
+             
+        sendHW("unlock")
+        return ok(cmd, message="Unlock command sent")
         
  
     return error(f"Unhandled command '{cmd}'", cmd)
