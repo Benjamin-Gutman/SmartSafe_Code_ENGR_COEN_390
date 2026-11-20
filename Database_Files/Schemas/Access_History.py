@@ -1,30 +1,21 @@
-#for safe acces history
-# For safe access history
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Any
-
+from .Inventory_History import InventoryHistory
 
 class AccessHistory(BaseModel):
     user_id: int
-    changes_made: list[dict[str, Any]]
-    timestamp: datetime = Field(default_factory=datetime.now)
-
+    changes_made: list[InventoryHistory]
+    timestamp: datetime
 
 class AccessHistoryCreate(AccessHistory):
     pass
 
-
 class AccessHistoryUpdate(AccessHistory):
     access_id: int
 
-
-class AccessHistoryDelete(BaseModel):
+class AccessHistoryDelete(AccessHistory):
     access_id: int
 
 
 class AccessHistoryResponse(AccessHistory):
-    access_id: int
-    username: str | None = None
-
     model_config = ConfigDict(from_attributes=True)
