@@ -44,7 +44,6 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
         UserStore userStore = new UserStore(databaseHelper);
 
         sync = new DataSync(this, inventoryStore, null, userStore);
-        sync.getUserByUsername(username);
 
         Button buttonInventory = findViewById(R.id.buttonInventory);
         Button buttonUserHistory = findViewById(R.id.buttonUserHistory);
@@ -99,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
             }
         });
         buttonAccount.setOnClickListener(v -> showAccountDialog());
+        sync.getUserByUsername(username);
     }
 
     //account button + sign out dialog
@@ -134,6 +134,8 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
                 userInfoLoaded = true;
                 buttonManageUsers.setVisibility(isAdminFlag ? android.view.View.VISIBLE : android.view.View.GONE);
 
+                // Start monitoring only after user information has loaded.
+                SafeStatusMonitor.getInstance().start(getApplicationContext());
             }
         }
     }
