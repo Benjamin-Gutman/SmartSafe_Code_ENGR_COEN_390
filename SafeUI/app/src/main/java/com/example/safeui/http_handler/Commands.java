@@ -144,9 +144,9 @@ public class Commands
         return "isLocked";
     }
 
-
-
-
-
+//-----------Safe Commands ------------------
+    public static String unlockDoor(int user_id){
+        return "unlockDoor --user_id " + user_id;
+    }
 
 }
