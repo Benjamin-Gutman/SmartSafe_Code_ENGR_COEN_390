@@ -88,33 +88,39 @@ public class UserStore implements DataSync.UserLocalStore {
         }
     }
 
-     private void writeUser(SQLiteDatabase db, Models.User user)
-    {
+
+    private void writeUser(SQLiteDatabase db, Models.User user) {
         if (user == null) return;
 
         ContentValues cv = new ContentValues();
 
         cv.put("username", user.username);
         cv.put("role", user.isAdmin ? "admin" : "user");
-        cv.put("can_open_safe",
-                user.hasOpenDoorPrivilege ? 1 : 0);
+        cv.put("can_open_safe", user.hasOpenDoorPrivilege ? 1 : 0);
 
+        // First, update the user using their username.
+        // Username is unique in the local database.
         int rows = db.update(
                 TABLE,
                 cv,
-                "id = ?",
-                new String[]{String.valueOf(user.user_id)}
+                "username = ? COLLATE NOCASE",
+                new String[]{user.username}
         );
 
-        if (rows == 0)
-        {
-            // Pre-existing info should not be replaced by this. 
-            cv.put("id", user.user_id);
-            cv.put("password_hash", "");
-            cv.put("password_salt", "");
-
-            db.insertOrThrow(TABLE, null, cv);
+        // The user already exists locally, so we are finished.
+        if (rows > 0) {
+            return;
         }
+
+        // Otherwise, insert the user as a new local record.
+        // Keep the server ID so existing server-ID-based operations
+        // continue to work for newly synchronized users.
+        cv.put("id", user.user_id);
+        cv.put("password_hash", "");
+        cv.put("password_salt", "");
+
+        db.insertOrThrow(TABLE, null, cv);
     }
-    
+
+
 }

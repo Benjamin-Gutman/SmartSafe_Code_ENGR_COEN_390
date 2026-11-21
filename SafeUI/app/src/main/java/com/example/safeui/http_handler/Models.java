@@ -42,6 +42,11 @@ public class Models
         public String hashed_password; // not sure if i need to include this here
     }
 
+    public static class SafeStatus {
+        public Boolean isLocked;
+        public Boolean isOpen;
+        public Boolean alarm;
+    }
 
     // Field names match the Pi's inventory-history JSON.
     public static class InventoryHistoryItem
@@ -176,6 +181,8 @@ public class Models
         public JsonElement users;
         public JsonElement user;
         public Integer user_id;
+
+        public JsonElement doorStatus;
         public Integer item_id; // Not sure why its here, but will keep just in case for now
 
 
@@ -213,9 +220,6 @@ public class Models
                 return null;
             }
             return GSON.fromJson(user, User.class);
-
-
-
         }
 
         public List<User> asUsers()
@@ -227,8 +231,13 @@ public class Models
             return GSON.fromJson(users, new TypeToken<List<User>>(){}.getType());
         }
 
+        public SafeStatus asSafeStatus() {
+            if (doorStatus == null || !doorStatus.isJsonObject()) {
+                return null;
+            }
 
-
+            return GSON.fromJson(doorStatus, SafeStatus.class);
+        }
 
         public List<InventoryHistoryItem> asInventoryHistoryItems()
         {

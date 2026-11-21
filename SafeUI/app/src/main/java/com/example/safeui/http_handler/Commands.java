@@ -62,7 +62,7 @@ public class Commands
    {
       // will by default give no admin nor door privilege
        //CHANGE HERE TO TRUE FOR TESTING IF YOU WANT
-        return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin false --hasOpenDoorPrivilege false" ;
+        return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin true --hasOpenDoorPrivilege true" ;
        
    }
 
@@ -144,9 +144,12 @@ public class Commands
         return "isLocked";
     }
 
+//-----------Safe Commands ------------------
+    public static String unlockDoor(int user_id){
+        return "unlockDoor --user_id " + user_id;
+    }
 
-
-
-
-
+    public static String getStatus() {
+        return "getStatus";
+    }
 }

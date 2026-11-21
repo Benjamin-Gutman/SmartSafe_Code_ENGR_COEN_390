@@ -40,6 +40,10 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     private TextView textInventorySubtitle;
     private boolean showingHistory = false;
 
+    private SafeAlertBanner safeAlertBanner;
+    private String username;
+    private int userId = -1;
+
     // ClientSocket accepts one command at a time. These flags combine refresh
     // requests while an earlier command is still running.
     private boolean requestInFlight = false;
@@ -68,12 +72,16 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
 
         // Keep the existing screen's login requirement. The logged-in user is
         // not used as the actor of downloaded history: the Pi does not send one.
-        String username = getIntent().getStringExtra("username");
+        username = getIntent().getStringExtra("username");
+        userId = getIntent().getIntExtra("user_id", -1);
+
         if (username == null || username.trim().isEmpty()) {
             Toast.makeText(this, "Unable to identify the logged-in user.", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
+
+        safeAlertBanner = new SafeAlertBanner(this, username, userId);
 
         databaseHelper = new DatabaseHelper(getApplicationContext());
         historyStore = new InventoryHistoryStore(databaseHelper);
@@ -113,9 +121,21 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     @Override
     protected void onResume() {
         super.onResume();
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onResume();
+        }
+
         if (layoutInventoryItems != null && databaseHelper != null) {
             updateInventoryDisplay();
         }
+    }
+
+    @Override
+    protected void onPause() {
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onPause();
+        }
+        super.onPause();
     }
 
     @Override

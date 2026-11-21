@@ -14,6 +14,7 @@ import com.example.safeui.R;
 import com.example.safeui.http_handler.DataSync;
 import com.example.safeui.http_handler.InventoryStore;
 import com.example.safeui.http_handler.Models;
+import com.example.safeui.http_handler.SafeStatusMonitor;
 
 public class LoginActivity extends AppCompatActivity implements DataSync.Listener {
     private EditText editUsername;
@@ -53,7 +54,7 @@ public class LoginActivity extends AppCompatActivity implements DataSync.Listene
             return;
         }
 
-        sync.verifyUser(username,password); // will call server database to verify user, check onReply to see how it responds. 
+        sync.verifyUser(username,password); // will call server database to verify user, check onReply to see how it responds.
     }
 
     private void openCreateAccount() {
@@ -63,14 +64,18 @@ public class LoginActivity extends AppCompatActivity implements DataSync.Listene
 
     }
 
-    @Override 
+    @Override
     public void onReply(Models.Reply reply){
         if("verifyUser".equals(reply.command)){
-            //if login successful, will go to main activity and feedback of successful login. 
+            //if login successful, will go to main activity and feedback of successful login.
             // trasmits username to mainActivity
             if (!reply.message.contains("not")){//message will only contain not if user not found, so will only proceed if there isn't not in message
                 String username = editUsername.getText().toString().trim();
                 Toast.makeText(this, "Succesfully logged in, user: " + username , Toast.LENGTH_SHORT).show();
+
+                // Start monitoring the safe after successful login.
+               // SafeStatusMonitor.getInstance().start(getApplicationContext());
+
                 Intent intent = new Intent( LoginActivity.this, MainActivity.class);
                 intent.putExtra("username", username);
                 startActivity(intent);
@@ -82,8 +87,8 @@ public class LoginActivity extends AppCompatActivity implements DataSync.Listene
     }
     // Databasehelper.py will return an error if an only if  user was not found.
     // Message should be "User {username} not found"
-    // Only possible error message response in this activity. 
-    @Override 
+    // Only possible error message response in this activity.
+    @Override
     public void onError(String message){
         Toast.makeText(this,  "ERROR:" + message, Toast.LENGTH_LONG).show();
     }

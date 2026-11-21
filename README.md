@@ -2,11 +2,21 @@
 
 This document explains how to launch different sections of this project
 
-
 ## Android application
 
 Open Android Studio in SafeUI/ project directory.
 
+
+## Launching Full Backend on Raspberry Pi (Does not support SSH yet)
+
+**Launch Commands:** The run.sh script launchs both hardware interface and websocket backend in order in seperate terminals. Use script in Database_Files/ to test.
+
+```bash
+
+cd ~/SmartSafe_Code_ENGR_COEN_390
+./run.sh
+
+```
 
 ## DataBase and RPI5 Backend Websocket Service
 
