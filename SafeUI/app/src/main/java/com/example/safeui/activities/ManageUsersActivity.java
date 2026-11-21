@@ -112,6 +112,12 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
                 permissionAdmin.setChecked(user.isAdmin);
                 row.addView(permissionAdmin);
 
+                Button deleteUser = new Button(this);
+                deleteUser.setText("Delete User");
+                deleteUser.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.RED));
+                deleteUser.setTextColor(android.graphics.Color.WHITE);
+                row.addView(deleteUser);
+
 //-----------------------------------------------------------------
 
                 //check mark button to give safe permissions
@@ -124,8 +130,14 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
                 permissionAdmin.setOnCheckedChangeListener(
                         (button, checked) -> updatePermission((CheckBox) button,user,checked,true)
                 );
+                //userList.addView(row);
+                
+                deleteUser.setOnClickListener(v -> {
+                new AlertDialog.Builder(this).setTitle("Delete User").setMessage("Are you sure you want to delete " + username + "?")
+                .setPositiveButton("Delete", (dialog, which) -> {sync.deleteUser(userId);})
+                .setNegativeButton("Cancel", (dialog, which) -> {dialog.dismiss();}).show();}); 
+                }
                 userList.addView(row);
-            }
 
         } catch (Exception e) {
             Toast.makeText(this, "Could not load user accounts.", Toast.LENGTH_LONG).show();
