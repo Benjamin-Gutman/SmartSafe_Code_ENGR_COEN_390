@@ -192,7 +192,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             if verification == True :
                 return ok(cmd, message=f"User {args.username} is verified with this Password")
             else : 
-                return ok(cmd, message=f"User {args.name} could not be verified with this Password")
+                return ok(cmd, message=f"User {args.username} could not be verified with this Password")
 
 #--------------------------------------------------------------------
 #User Access history part (NOT COMPLETE NOR FUNCTIONAL)
