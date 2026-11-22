@@ -1,6 +1,7 @@
 package com.example.safeui.activities;
 
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -9,6 +10,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.safeui.DatabaseHelper;
@@ -119,6 +121,14 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
                 permissionAdmin.setChecked(user.isAdmin);
                 row.addView(permissionAdmin);
 
+                Button deleteUser = new Button(this);
+                deleteUser.setText("Delete User");
+                deleteUser.setTextSize(12);
+                LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, 100 );
+                deleteUser.setLayoutParams(buttonParams);
+                deleteUser.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.RED));
+                deleteUser.setTextColor(android.graphics.Color.WHITE);
+                row.addView(deleteUser);
 //-----------------------------------------------------------------
 
                 //check mark button to give safe permissions
@@ -132,6 +142,20 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
                         (button, checked) -> updatePermission((CheckBox) button,user,checked,true)
                 );
                 userList.addView(row);
+
+                // Button to delete user, will ask for confirmation from admin.
+                deleteUser.setOnClickListener(v -> {
+                    new AlertDialog.Builder(this)
+                            .setTitle("Delete User")
+                            .setMessage("Are you sure you want to delete the following user :  " + username + " ?")
+                            .setPositiveButton("Delete", (dialog, which) -> {
+                                sync.deleteUser(userId);
+                            })
+                            .setNegativeButton("Cancel", (dialog, which) -> {
+                                dialog.dismiss();
+                            })
+                            .show();
+                });
             }
 
         } catch (Exception e) {
@@ -210,6 +234,10 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
                 Toast.makeText(this, "Administrator access required.", Toast.LENGTH_LONG).show();
                 finish();
             }
+        } else if("deleteUser".equals(reply.command)){ // when deleting a user, will refresh page to have locally stored users match up as well as UI
+            Toast.makeText(this, "User deleted successfully.", Toast.LENGTH_SHORT).show();
+            // Request an updated list from the server
+            sync.listUsers();
         }
     }
     
