@@ -40,6 +40,10 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     private TextView textInventorySubtitle;
     private boolean showingHistory = false;
 
+    private SafeAlertBanner safeAlertBanner;
+    private String username;
+    private int userId = -1;
+
     // ClientSocket accepts one command at a time. These flags combine refresh
     // requests while an earlier command is still running.
     private boolean requestInFlight = false;
@@ -68,12 +72,16 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
 
         // Keep the existing screen's login requirement. The logged-in user is
         // not used as the actor of downloaded history: the Pi does not send one.
-        String username = getIntent().getStringExtra("username");
+        username = getIntent().getStringExtra("username");
+        userId = getIntent().getIntExtra("user_id", -1);
+
         if (username == null || username.trim().isEmpty()) {
             Toast.makeText(this, "Unable to identify the logged-in user.", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
+
+        safeAlertBanner = new SafeAlertBanner(this, username, userId);
 
         databaseHelper = new DatabaseHelper(getApplicationContext());
         historyStore = new InventoryHistoryStore(databaseHelper);
@@ -113,9 +121,21 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     @Override
     protected void onResume() {
         super.onResume();
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onResume();
+        }
+
         if (layoutInventoryItems != null && databaseHelper != null) {
             updateInventoryDisplay();
         }
+    }
+
+    @Override
+    protected void onPause() {
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onPause();
+        }
+        super.onPause();
     }
 
     @Override
@@ -138,7 +158,6 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         if (isInventoryChange(reply.command)) {
             historyRefreshPending = true;
         }
-
         updateInventoryDisplay();
         sendNextRefresh();
     }
@@ -338,8 +357,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     }
 
     private String historyUsername(String username) {
-        return username == null || username.trim().isEmpty()
-                ? "Unknown" : username.trim();
+        return username == null || username.trim().isEmpty() ? "Unknown" : username.trim();
     }
 
     private String historyActionLabel(String action) {
@@ -535,7 +553,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         editQuantity.setHint("Quantity to add");
         editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
 
-        //diialog that appears when "Add" item is clicked
+        //dialog that appears when "Add" item is clicked
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle ("Add quantity to " + itemName)
                 .setView (editQuantity)
@@ -638,7 +656,6 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                             if (!beginInventoryRequest(itemName + " permanently deleted.")) {
                                 return;
                             }
-
                             //uses delete() from DataSync
                             sync.delete(itemId);
 
@@ -662,7 +679,6 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         if (!destroyed || requestInFlight || databaseClosing) {
             return;
         }
-
         // Wait for a pending DataSync write and any queued history reads before
         // closing the helper. Network callbacks arrive after their cache write.
         databaseClosing = true;
