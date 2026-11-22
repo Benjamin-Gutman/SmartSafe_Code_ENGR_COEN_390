@@ -74,7 +74,7 @@ public class LoginActivity extends AppCompatActivity implements DataSync.Listene
                 Toast.makeText(this, "Succesfully logged in, user: " + username , Toast.LENGTH_SHORT).show();
 
                 // Start monitoring the safe after successful login.
-               // SafeStatusMonitor.getInstance().start(getApplicationContext());
+               SafeStatusMonitor.getInstance().start(getApplicationContext());
 
                 Intent intent = new Intent( LoginActivity.this, MainActivity.class);
                 intent.putExtra("username", username);

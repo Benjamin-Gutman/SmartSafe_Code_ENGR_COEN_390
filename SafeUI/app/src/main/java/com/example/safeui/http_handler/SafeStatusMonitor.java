@@ -97,8 +97,6 @@ public class SafeStatusMonitor implements DataSync.Listener {
 
     private boolean isAlarmState(Models.SafeStatus status) {
         return status != null
-                && Boolean.TRUE.equals(status.isLocked)
-                && Boolean.TRUE.equals(status.isOpen)
                 && Boolean.TRUE.equals(status.alarm);
     }
 

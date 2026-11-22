@@ -158,7 +158,6 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         if (isInventoryChange(reply.command)) {
             historyRefreshPending = true;
         }
-
         updateInventoryDisplay();
         sendNextRefresh();
     }
@@ -554,7 +553,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         editQuantity.setHint("Quantity to add");
         editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
 
-        //diialog that appears when "Add" item is clicked
+        //dialog that appears when "Add" item is clicked
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle ("Add quantity to " + itemName)
                 .setView (editQuantity)
@@ -657,7 +656,6 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                             if (!beginInventoryRequest(itemName + " permanently deleted.")) {
                                 return;
                             }
-
                             //uses delete() from DataSync
                             sync.delete(itemId);
 
@@ -681,7 +679,6 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         if (!destroyed || requestInFlight || databaseClosing) {
             return;
         }
-
         // Wait for a pending DataSync write and any queued history reads before
         // closing the helper. Network callbacks arrive after their cache write.
         databaseClosing = true;

@@ -133,9 +133,6 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
                 hasOpenDoorPrivilege = user.hasOpenDoorPrivilege;
                 userInfoLoaded = true;
                 buttonManageUsers.setVisibility(isAdminFlag ? android.view.View.VISIBLE : android.view.View.GONE);
-
-                // Start monitoring only after user information has loaded.
-                SafeStatusMonitor.getInstance().start(getApplicationContext());
             }
         }
     }
