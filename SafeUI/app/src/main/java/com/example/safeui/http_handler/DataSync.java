@@ -105,10 +105,20 @@ public class DataSync
         run(Commands.historyForItem(itemId), true, itemId);
     }
 
+    // public void create(String name, int quantity, String item_barcode)
+    // {
+    //     run(Commands.createInventoryItem(name, quantity));
+    // }
+
     public void create(String name, int quantity)
     {
         run(Commands.createInventoryItem(name, quantity));
     }
+
+    // public void update(int itemId, String name, int quantity, String item_barcode)
+    // {
+    //     run(Commands.editInventoryItem(itemId, name, quantity, item_barcode));
+    // }
 
     public void update(int itemId, String name, int quantity)
     {
@@ -129,6 +139,11 @@ public class DataSync
     {
         run(Commands.getByID(itemId));
     }
+
+    // public void fetchByBarcode( String item_barcode)
+    // {
+    //     run(Commands.getItemByBarcode(item_barcode));
+    // }
 
     public void delete(int itemId)
     {
@@ -177,6 +192,12 @@ public class DataSync
         run(Commands.verifyUser(username,password));
     }
 
+    public void deleteUser(int user_id)
+    {
+        run(Commands.deleteUser( user_id));
+    }
+
+    // User Access History related commands
 
     // --------------User Access History related commands--------------
     public void getAccessHistory(int access_id)

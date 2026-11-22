@@ -23,6 +23,7 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
     private Button buttonOpenSafe;
     private Button buttonBackHome;
 
+    private SafeAlertBanner safeAlertBanner;
     private boolean unlockPending = false;
 
     @Override
@@ -32,6 +33,7 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
 
         username = getIntent().getStringExtra("username");
         userId = getIntent().getIntExtra("user_id", -1);
+        safeAlertBanner = new SafeAlertBanner(this, username, userId);
 
         databaseHelper = new DatabaseHelper(this);
 
@@ -76,7 +78,7 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
         // Case 3: Locked, open, alarm on
         //this will be changed when we eventually get a check status regularly
         else if (safeStatus.isLocked && safeStatus.isOpen && safeStatus.alarm) {
-            Toast.makeText(this, "Unauthorized opening detected! Click Unlocking door to clear the alarm.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Safe was opened without permission, clearing the alarm now.", Toast.LENGTH_LONG).show();
             sync.unlockDoor(userId);
         }
 
@@ -93,10 +95,26 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
         }
 
         else if ("unlockDoor".equals(reply.command)) {
-            Toast.makeText(this,
-                    "Unlock command sent to the safe.",
-                    Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Unlock command sent to the safe.", Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onResume();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onPause();
+        }
+
+        super.onPause();
     }
 
     @Override

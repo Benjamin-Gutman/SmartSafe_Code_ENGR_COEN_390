@@ -28,6 +28,9 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
     private DataSync sync;
     private List<Models.User> serverUsers = new ArrayList<>();
 
+    private SafeAlertBanner safeAlertBanner;
+    private int userId = -1;
+
     private CheckBox pendingPermissionCheckbox;
     private Boolean previousPermission;
     private Boolean permissionUpdatePending = false;
@@ -38,6 +41,10 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
         setContentView(R.layout.activity_manage_users);
 
         adminUsername = getIntent().getStringExtra("username");
+        userId = getIntent().getIntExtra("user_id", -1);
+
+        safeAlertBanner = new SafeAlertBanner(this, adminUsername, userId);
+
         databaseHelper = new DatabaseHelper(this);
         //set up datasync object to get info from database on RPI 
         store = new UserStore(databaseHelper);
@@ -217,16 +224,22 @@ public class ManageUsersActivity extends AppCompatActivity implements DataSync.L
         Toast.makeText(this,  message, Toast.LENGTH_SHORT).show();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
 
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onResume();
+        }
+    }
 
+    @Override
+    protected void onPause() {
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onPause();
+        }
 
-
-
-
-
-
-
-
-
+        super.onPause();
+    }
 
 }

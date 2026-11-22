@@ -14,12 +14,14 @@ import com.example.safeui.http_handler.DataSync;
 import com.example.safeui.http_handler.InventoryStore;
 import com.example.safeui.http_handler.Models;
 import com.example.safeui.http_handler.UserStore;
+import com.example.safeui.http_handler.SafeStatusMonitor;
 
 public class MainActivity extends AppCompatActivity implements DataSync.Listener {
     private String username;
     private DatabaseHelper databaseHelper;
     private DataSync sync;
     private Button buttonManageUsers;
+    private SafeAlertBanner safeAlertBanner;
     private boolean isAdminFlag = false;
     private boolean hasOpenDoorPrivilege = false;
     private boolean userInfoLoaded = false;
@@ -31,18 +33,17 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
         setContentView(R.layout.activity_main);
 
         username = getIntent().getStringExtra("username");
-
-
         if (username == null || username.isEmpty()) {
             username = "User";
         }
+
+        safeAlertBanner = new SafeAlertBanner(this, username, -1);
 
         databaseHelper = new DatabaseHelper(this);
         InventoryStore inventoryStore = new InventoryStore(databaseHelper);
         UserStore userStore = new UserStore(databaseHelper);
 
         sync = new DataSync(this, inventoryStore, null, userStore);
-        sync.getUserByUsername(username);
 
         Button buttonInventory = findViewById(R.id.buttonInventory);
         Button buttonUserHistory = findViewById(R.id.buttonUserHistory);
@@ -61,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
         //Inventory button
         buttonInventory.setOnClickListener(v -> {Intent intent = new Intent(MainActivity.this, InventoryActivity.class);
             intent.putExtra("username", username);
+            intent.putExtra("user_id", currentUserId);
             startActivity(intent);
         });
 
@@ -89,12 +91,14 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
             if (isAdminFlag) {
                 Intent intent = new Intent(MainActivity.this, ManageUsersActivity.class);
                 intent.putExtra("username", username);
+                intent.putExtra("user_id", currentUserId);
                 startActivity(intent);
             } else {
                 Toast.makeText(this, "Administrator access required.", Toast.LENGTH_SHORT).show();
             }
         });
         buttonAccount.setOnClickListener(v -> showAccountDialog());
+        sync.getUserByUsername(username);
     }
 
     //account button + sign out dialog
@@ -102,8 +106,11 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
         new AlertDialog.Builder(this)
                 .setTitle("Account")
                 .setMessage("Logged in as: " + username)
-                .setPositiveButton("Log Out", (dialog, which) -> {Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                .setPositiveButton("Log Out", (dialog, which) -> {
+                    // Stop safe status monitoring.
+                    SafeStatusMonitor.getInstance().stop();
 
+                    Intent intent = new Intent(MainActivity.this, LoginActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
                     startActivity(intent);
@@ -121,23 +128,37 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
 
             if (user != null) {
                 currentUserId = user.user_id;
+                safeAlertBanner.updateUserInfo(username, currentUserId);
                 isAdminFlag = user.isAdmin;
                 hasOpenDoorPrivilege = user.hasOpenDoorPrivilege;
                 userInfoLoaded = true;
                 buttonManageUsers.setVisibility(isAdminFlag ? android.view.View.VISIBLE : android.view.View.GONE);
-
             }
         }
     }
-    
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onResume();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (safeAlertBanner != null) {
+            safeAlertBanner.onPause();
+        }
+
+        super.onPause();
+    }
+
     @Override 
     public void onError(String message){
         Toast.makeText(this,   "ERROR: "+message, Toast.LENGTH_SHORT).show();
     }
-
-
-
-
 
 }
 
