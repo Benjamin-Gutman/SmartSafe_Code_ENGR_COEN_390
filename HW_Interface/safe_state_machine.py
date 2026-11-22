@@ -3,7 +3,7 @@
 import logging 
 import time 
 
-import config
+from . import config
 
 log = logging.getLogger("hw")
 
