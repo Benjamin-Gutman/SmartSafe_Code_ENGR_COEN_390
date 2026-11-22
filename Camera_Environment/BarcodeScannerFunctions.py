@@ -3,7 +3,7 @@ from picamera2 import Picamera2
 from pyzbar.pyzbar import decode
 from libcamera import controls
 import numpy as np
-from .Database_Files.Schemas.Inventory import Inventory
+from Database_Files.Schemas.Inventory import Inventory
 
 def camera_init() -> Picamera2:
     picam2 = Picamera2()
