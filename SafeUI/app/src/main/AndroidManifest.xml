@@ -30,6 +30,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".activities.SafeActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".activities.ManageUsersActivity"
             android:exported="false" />
 

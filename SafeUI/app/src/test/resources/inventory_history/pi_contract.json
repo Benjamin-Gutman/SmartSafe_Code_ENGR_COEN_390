@@ -1,0 +1,138 @@
+{
+  "source_commit": "10b8ec9d91de921094d6a2a2536055b969c766fe",
+  "all_history": {
+    "status": "ok",
+    "command": "history",
+    "history": [
+      {
+        "item_id": 1,
+        "item_name": "Passport",
+        "quantity": 5,
+        "action": "add",
+        "timestamp": "2026-11-12T20:28:18.822305Z"
+      },
+      {
+        "item_id": 1,
+        "item_name": "Passport",
+        "quantity": 7,
+        "action": "add",
+        "timestamp": "2026-11-12T20:28:18.825802Z"
+      },
+      {
+        "item_id": 1,
+        "item_name": "Passport",
+        "quantity": 4,
+        "action": "remove",
+        "timestamp": "2026-11-12T20:28:18.826907Z"
+      },
+      {
+        "item_id": 2,
+        "item_name": "Coins",
+        "quantity": 4,
+        "action": "add",
+        "timestamp": "2026-11-12T20:28:18.827882Z"
+      },
+      {
+        "item_id": 1,
+        "item_name": "Passport",
+        "quantity": 6,
+        "action": "add",
+        "timestamp": "2026-11-12T20:28:18.829339Z"
+      },
+      {
+        "item_id": 1,
+        "item_name": "Passport",
+        "quantity": 6,
+        "action": "delete",
+        "timestamp": "2026-11-12T20:28:18.830338Z"
+      },
+      {
+        "item_id": 2,
+        "item_name": "Coins",
+        "quantity": 0,
+        "action": "remove",
+        "timestamp": "2026-11-12T20:28:18.831385Z"
+      },
+      {
+        "item_id": 2,
+        "item_name": "Coins",
+        "quantity": 0,
+        "action": "delete",
+        "timestamp": "2026-11-12T20:28:18.832310Z"
+      }
+    ]
+  },
+  "item_history": {
+    "status": "ok",
+    "command": "history",
+    "history": [
+      {
+        "item_id": 1,
+        "item_name": "Passport",
+        "quantity": 5,
+        "action": "add",
+        "timestamp": "2026-11-12T20:28:18.822305Z"
+      },
+      {
+        "item_id": 1,
+        "item_name": "Passport",
+        "quantity": 7,
+        "action": "add",
+        "timestamp": "2026-11-12T20:28:18.825802Z"
+      },
+      {
+        "item_id": 1,
+        "item_name": "Passport",
+        "quantity": 4,
+        "action": "remove",
+        "timestamp": "2026-11-12T20:28:18.826907Z"
+      },
+      {
+        "item_id": 1,
+        "item_name": "Passport",
+        "quantity": 6,
+        "action": "add",
+        "timestamp": "2026-11-12T20:28:18.829339Z"
+      },
+      {
+        "item_id": 1,
+        "item_name": "Passport",
+        "quantity": 6,
+        "action": "delete",
+        "timestamp": "2026-11-12T20:28:18.830338Z"
+      }
+    ]
+  },
+  "zero_item_history": {
+    "status": "ok",
+    "command": "history",
+    "history": [
+      {
+        "item_id": 2,
+        "item_name": "Coins",
+        "quantity": 4,
+        "action": "add",
+        "timestamp": "2026-11-12T20:28:18.827882Z"
+      },
+      {
+        "item_id": 2,
+        "item_name": "Coins",
+        "quantity": 0,
+        "action": "remove",
+        "timestamp": "2026-11-12T20:28:18.831385Z"
+      },
+      {
+        "item_id": 2,
+        "item_name": "Coins",
+        "quantity": 0,
+        "action": "delete",
+        "timestamp": "2026-11-12T20:28:18.832310Z"
+      }
+    ]
+  },
+  "empty_history": {
+    "status": "ok",
+    "command": "history",
+    "history": []
+  }
+}
