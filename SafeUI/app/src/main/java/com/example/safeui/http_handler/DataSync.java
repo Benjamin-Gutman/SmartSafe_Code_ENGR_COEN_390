@@ -186,6 +186,10 @@ public class DataSync
     {
         run(Commands.updateUserPrivileges(user_id,isAdmin,hasOpenDoorPrivilege));
     }
+    public void deleteUser(int user_id)
+    {
+        run(Commands.deleteUser(user_id));
+    }
 
     public void verifyUser(String username, String password)
     {
