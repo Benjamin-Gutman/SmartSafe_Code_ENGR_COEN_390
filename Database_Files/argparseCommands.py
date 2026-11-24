@@ -47,14 +47,18 @@ def build_command_parser() -> SocketArgumentParser:
     p = sub.add_parser("create", help="create a new inventory item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--name", required=True, help="item name")
     p.add_argument("--quantity", type=int, required=True, help="initial quantity (> 0)")
+    p.add_argument("--barcode", help="item barcode")
+    p.add_argument("--user_id", type=int)
  
     p = sub.add_parser("add", help="add quantity to an item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
     p.add_argument("quantity", type=int)
+    p.add_argument("user_id", type=int)
  
     p = sub.add_parser("remove", help="remove quantity from an item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
     p.add_argument("quantity", type=int)
+    p.add_argument("user_id", type=int)
  
     p = sub.add_parser("get", help="get one item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
@@ -63,14 +67,20 @@ def build_command_parser() -> SocketArgumentParser:
  
     p = sub.add_parser("update", help="set an item's name and quantity", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
-    p.add_argument("--name", required=True)
+    p.add_argument("--name")
     p.add_argument("--quantity", type=int, required=True)
+    p.add_argument("--barcode", help="item barcode")
+    p.add_argument("--user_id", type=int)
  
     p = sub.add_parser("delete", help="delete an item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
+    p.add_argument("user_id", type=int)
  
     p = sub.add_parser("history", help="show inventory history", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--item-id", type=int, default=None, help="filter by item id")
+
+    p = sub.add_parser("getItemByBarcode", help="show inventory history", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--barcode", help="item barcode")
 
 #--------------------------------------------------------------------
 #User table related commands
@@ -111,7 +121,7 @@ def build_command_parser() -> SocketArgumentParser:
     p.add_argument("--user_id", type=int, required=True)
 
     p = sub.add_parser("verifyUser", help= "for verifying a user", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--name", required=True)
+    p.add_argument("--username", required=True)
     p.add_argument("--password")
 
 #--------------------------------------------------------------------
@@ -144,19 +154,23 @@ def build_command_parser() -> SocketArgumentParser:
 #--------------------------------------------------------------------
 
 #HW communication
-    p = sub.add_parser("giveStatus", help= "give save status", formatter_class=argparse.RawTextHelpFormatter)
+    p = sub.add_parser("giveStatus", help= "give safe status", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("-isLocked", type=str2bool, required=True)
     p.add_argument("-isOpen", type=str2bool)
     p.add_argument("-alarm", type=str2bool)
+    p.add_argument("-user_id", type=int)
+
+    p = sub.add_parser("scanResult", help= "give safe status", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("-results")
 
 
 #Android comunication
-    p = sub.add_parser("getStatus", help= "give save status", formatter_class=argparse.RawTextHelpFormatter)
+    p = sub.add_parser("getStatus", help= "give safe status", formatter_class=argparse.RawTextHelpFormatter)
 
     p = sub.add_parser("lockDoor", help= "lock the safe", formatter_class=argparse.RawTextHelpFormatter)
 
     p = sub.add_parser("unlockDoor", help= "unlock the safe ", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--user_id" )
+    p.add_argument("--user_id", type=int, required=True)
 
 
     sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)

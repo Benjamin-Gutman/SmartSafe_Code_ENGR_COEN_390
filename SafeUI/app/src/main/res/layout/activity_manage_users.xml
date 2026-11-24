@@ -8,6 +8,9 @@
     android:background="#F7F7F7"
     android:padding="16dp">
 
+    <include
+        layout="@layout/view_safe_alert_banner" />
+
     <TextView
         android:id="@+id/textManageUsersTitle"
         android:layout_width="match_parent"
