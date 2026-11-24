@@ -11,10 +11,10 @@ class InventoryHistory(BaseModel):
 
 class InventoryHistoryResponse(InventoryHistory):
     model_config = ConfigDict(from_attributes=True)
+    history_id: int
 
 class InventoryHistoryCreate(InventoryHistory):
     pass
 
 class InventoryHistoryUpdate(InventoryHistory):
     pass
-
