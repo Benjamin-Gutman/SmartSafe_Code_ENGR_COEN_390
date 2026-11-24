@@ -7,6 +7,7 @@ import pydantic
 from contextlib import contextmanager
 from pydantic import BaseModel
 from argparseCommands import SocketArgumentParser, CommandError, build_command_parser
+from datetime import datetime
 
 import websockets
 from websockets.sync.client import connect
@@ -14,12 +15,14 @@ from sqlalchemy.orm import sessionmaker
  
 import DatabaseHelper as db_helper
 from Database import engine
-from Schemas.Inventory import InventoryCreate, InventoryResponse, InventoryUpdate
-from Schemas.Inventory_History import InventoryHistoryResponse
+from Schemas.Inventory import InventoryCreate, InventoryResponse, InventoryUpdate, Inventory
+from Schemas.Inventory_History import InventoryHistoryResponse, InventoryHistory
 from Schemas.Users import UserUpdate, UserResponse, UserCreate, UserLogin
 from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, AccessHistoryResponse, AccessHistoryUpdate
  
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+
+tempAccessHistory : AccessHistoryCreate
 
 class Status(BaseModel):
     isLocked: bool = True
@@ -74,7 +77,65 @@ def session_scope():
         yield session
     finally:
         session.close()
- 
+
+
+def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistory]:
+
+    history: list[InventoryHistory] = []
+
+    # DatabaseHelper has no lookup by barcode, so index the existing items once.
+    existing_by_barcode = {
+        item.item_barcode: item for item in db_helper.get_all_inventory(db)
+    }
+
+    for incoming in items:
+        existing = existing_by_barcode.get(incoming.item_barcode)
+
+        if existing is not None:
+            if incoming.quantity == existing.quantity:
+                continue
+
+            # Remember which history rows already exist so only the new ones are returned.
+            known_ids = {
+                h.history_id for h in db_helper.get_inventory_history(db, existing.item_id)
+            }
+            updated = db_helper.update_inventory(
+                db,
+                existing.item_id,
+                InventoryUpdate(
+                    item_id=existing.item_id,
+                    item_barcode=existing.item_barcode,
+                    item_name=existing.item_name,
+                    quantity=incoming.quantity,
+                ),
+            )
+            if updated is None:  # deleted by someone else mid-run
+                existing_by_barcode.pop(incoming.item_barcode, None)
+                continue
+
+            history.extend(
+                h
+                for h in db_helper.get_inventory_history(db, updated.item_id)
+                if h.history_id not in known_ids
+            )
+        else:
+            new_item = db_helper.create_inventory(
+                db,
+                InventoryCreate(
+                    item_barcode=incoming.item_barcode,
+                    item_name="",  # required by the schema, left blank on purpose
+                    quantity=incoming.quantity,
+                ),
+            )
+            # Register it so a repeated barcode later in the list updates this
+            # item instead of creating a duplicate.
+            existing_by_barcode[new_item.item_barcode] = new_item
+
+            # A brand new item has no history other than what create_inventory just wrote.
+            history.extend(db_helper.get_inventory_history(db, new_item.item_id))
+
+    return history
+
  
 # Command execution
 def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
@@ -87,7 +148,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
         # Inventory Database, one  one word cmd will default to Inventory
         if cmd == "create":
             item = db_helper.create_inventory(
-                db, InventoryCreate(item_name=args.name, quantity=args.quantity)
+                db, InventoryCreate(item_name=args.name, quantity=args.quantity, item_barcode=args.barcode)
             )
             return ok(cmd, message="Item created", inventory=item_to_dict(item))
  
@@ -195,7 +256,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
                 return ok(cmd, message=f"User {args.username} could not be verified with this Password")
 
 #--------------------------------------------------------------------
-#User Access history part (NOT COMPLETE NOR FUNCTIONAL)
+#User Access history part (NOT FUNCTIONAL)
 #--------------------------------------------------------------------
 
         if cmd == "createAccess":
@@ -236,15 +297,33 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             return ok(cmd, access_history = [access_history_to_dict(i) for i in entries])
 
 #--------------------------------------------------------------------
-#HW management part (NOT COMPLETE)
+#HW management part (MOSTLY COMPLETE)
 #--------------------------------------------------------------------
 
 #HW communication
         if cmd == "giveStatus": #will be changed later when scanning is implemented
+            if args.isLocked == False and doorStatus.isLocked == True:
+                if hasattr(args, "user_id") and args.user_id is not None:
+                    tempAccessHistory.user_id = args.user_id
+                else: 
+                    return error("no user specified on unlock", cmd)
+
             doorStatus.isLocked = args.isLocked
             doorStatus.isOpen = args.isOpen
             doorStatus.alarm = args.alarm
             return ok(cmd, message="status updated")
+
+        if cmd=="scanResult":
+            response = json.loads(args.results)
+            #items = [Inventory.model_validate(d) for d in response["inventory"]]
+            items = [Inventory.model_validate({"item_name": "", **d}) for d in response["inventory"]]
+            history = sync_inventory(db, items)
+            tempAccessHistory.changes_made = history
+            tempAccessHistory.timestamp = datetime.now()
+            db_helper.create_access_history(db, tempAccessHistory)
+            return ok(cmd, message="Inventory synced", history=[h.model_dump(mode="json") for h in history],)
+
+            
     
 #Android comunication
 

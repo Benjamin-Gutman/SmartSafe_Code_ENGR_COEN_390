@@ -10,5 +10,6 @@ class InventoryModel(Base):
     item_id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True
     )
+    item_barcode: Mapped[str] = mapped_column(String(100), nullable=False)
     item_name: Mapped[str] = mapped_column(String(100), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)

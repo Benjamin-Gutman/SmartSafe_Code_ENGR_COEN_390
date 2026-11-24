@@ -3,6 +3,7 @@ from datetime import datetime
 
 class InventoryHistory(BaseModel):
     item_id: int
+    item_barcode: str
     item_name: str
     quantity: int
     action: str
