@@ -54,7 +54,7 @@ public class HistoryPiContractTest
             public void onReply(Models.Reply reply) { replies++; }
             public void onError(String message) { fail(message); }
         };
-        sync = new DataSync(listener, null, store, (command, callback) -> {
+        sync = new DataSync(listener, null, store, null, (command, callback) -> {
             String key;
             if ("history".equals(command)) key = "all_history";
             else if ("history --item-id 1".equals(command)) key = "item_history";

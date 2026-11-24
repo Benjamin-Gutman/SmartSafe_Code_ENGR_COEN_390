@@ -68,7 +68,7 @@ public class InventoryHistoryUiTest
         ReflectionHelpers.setField(activity, "databaseHelper", helper);
         ReflectionHelpers.setField(activity, "historyStore", store);
         sender = new FakeSender();
-        sync = new DataSync(activity, new InventoryStore(helper), store, sender);
+        sync = new DataSync(activity, new InventoryStore(helper), store, null, sender);
         ReflectionHelpers.setField(activity, "sync", sync);
         reader = ReflectionHelpers.getField(activity, "historyReader");
         ShadowToast.reset();
