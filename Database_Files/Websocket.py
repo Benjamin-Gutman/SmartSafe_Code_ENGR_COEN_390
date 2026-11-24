@@ -12,6 +12,7 @@ from datetime import datetime
 import websockets
 from websockets.sync.client import connect
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
  
 import DatabaseHelper as db_helper
 from Database import engine
@@ -136,6 +137,14 @@ def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistory]:
 
     return history
 
+def createAccess(db: Session, inv: InventoryResponse, userID: int):
+    history = db_helper.get_inventory_history(db, inv.item_id)
+    newAccess = AccessHistoryCreate
+    newAccess.user_id = userID
+    newAccess.changes_made = history[-1]
+    newAccess.timestamp = datetime.now()
+    temp = db_helper.create_access_history(db, newAccess)
+    return
  
 # Command execution
 def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
@@ -150,6 +159,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             item = db_helper.create_inventory(
                 db, InventoryCreate(item_name=args.name, quantity=args.quantity, item_barcode=args.barcode)
             )
+            createAccess(db, item, args.user_id)
             return ok(cmd, message="Item created", inventory=item_to_dict(item))
  
         if cmd in ("add", "remove"):
@@ -157,6 +167,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             item = func(db, args.item_id, args.quantity)
             if item is None:
                 return error(f"Item {args.item_id} not found", cmd)
+            createAccess(db, item, args.user_id)
             return ok(cmd, message=f"Quantity {cmd}ed", inventory=item_to_dict(item))
  
         if cmd == "get":
@@ -171,18 +182,19 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
  
         if cmd == "update":
             update = InventoryUpdate(
-                item_id=args.item_id, item_name=args.name, quantity=args.quantity
+                item_id=args.item_id, item_name=args.name, quantity=args.quantity, item_barcode=args.barcode
             )
             item = db_helper.update_inventory(db, args.item_id, update)
             if item is None:
                 return error(f"Item {args.item_id} not found", cmd)
+            createAccess(db, item, args.user_id)
             return ok(cmd, message="Item updated", inventory=item_to_dict(item))
  
         if cmd == "delete":
             deleted = db_helper.delete_inventory(db, args.item_id)
-            if not deleted:
+            if deleted == None:
                 return error(f"Item {args.item_id} not found", cmd)
-            # Nothing to return for a deleted item, so send a confirmation.
+            createAccess(db, deleted, args.user_id)
             return ok(cmd, message=f"Item {args.item_id} deleted", item_id=args.item_id)
  
         if cmd == "history":

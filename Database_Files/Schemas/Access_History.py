@@ -19,3 +19,4 @@ class AccessHistoryDelete(AccessHistory):
 
 class AccessHistoryResponse(AccessHistory):
     model_config = ConfigDict(from_attributes=True)
+    access_id: int
