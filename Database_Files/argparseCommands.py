@@ -67,7 +67,7 @@ def build_command_parser() -> SocketArgumentParser:
  
     p = sub.add_parser("update", help="set an item's name and quantity", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
-    p.add_argument("--name", required=True)
+    p.add_argument("--name")
     p.add_argument("--quantity", type=int, required=True)
     p.add_argument("--barcode", help="item barcode")
     p.add_argument("--user_id", type=int)

@@ -100,12 +100,12 @@ def update_inventory(db: Session, item_id: int, item: InventoryUpdate) -> Invent
 def delete_inventory(db: Session, item_id: int) -> bool:
     inventory_item = db.get(InventoryModel, item_id)
     if inventory_item is None:
-        return False
+        return None
 
     record_history(db, inventory_item, "delete")
     db.delete(inventory_item)
     db.commit()
-    return True
+    return inventory_item
 
 
 def get_inventory_history(db: Session, item_id: int | None = None) -> list[InventoryHistoryModel]:
