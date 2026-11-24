@@ -36,7 +36,7 @@ public class HistoryDataSyncTest
         sender = new FakeSender();
         store = new RecordingStore();
         listener = new RecordingListener();
-        sync = new DataSync(listener, null, store, sender);
+        sync = new DataSync(listener, null, store, null, sender);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class HistoryDataSyncTest
     @Test
     public void callersCanReceiveHistoryWithoutConnectingAStore()
     {
-        sync = new DataSync(listener, null, null, sender);
+        sync = new DataSync(listener, null, null, null, sender);
         sync.refreshHistory();
         sender.callback.onReply(reply(Collections.emptyList()));
         idleMainLooper();
@@ -159,7 +159,7 @@ public class HistoryDataSyncTest
             public void remove(int itemId) { inventory.removeIf(item -> item.item_id == itemId); }
             public void replaceAll(List<Models.InventoryItem> items) { inventory.clear(); inventory.addAll(items); }
         };
-        sync = new DataSync(listener, inventoryStore, store, sender);
+        sync = new DataSync(listener, inventoryStore, store, null, sender);
         sync.refreshAll();
         assertEquals("list", sender.command);
         sender.callback.onReply(json("{\"status\":\"ok\",\"command\":\"list\",\"inventory\":["

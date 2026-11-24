@@ -196,11 +196,6 @@ public class DataSync
         run(Commands.verifyUser(username,password));
     }
 
-    public void deleteUser(int user_id)
-    {
-        run(Commands.deleteUser( user_id));
-    }
-
     // User Access History related commands
 
     // --------------User Access History related commands--------------

@@ -178,6 +178,7 @@ public class Models
         public String message; // For error messages
         public JsonElement inventory;
         public JsonElement history;
+        public JsonElement access_history;
         public JsonElement users;
         public JsonElement user;
         public Integer user_id;

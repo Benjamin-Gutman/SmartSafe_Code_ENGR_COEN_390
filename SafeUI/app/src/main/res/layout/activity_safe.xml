@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -8,8 +7,7 @@
     android:background="#F5F6F8"
     android:paddingBottom="16dp">
 
-    <include
-        layout="@layout/view_safe_alert_banner" />
+    <include layout="@layout/view_safe_alert_banner" />
 
     <TextView
         android:id="@+id/textManageSafeTitle"
@@ -32,35 +30,86 @@
         android:layout_marginEnd="12dp"
         android:textAllCaps="false" />
 
-    <TextView
-        android:id="@+id/textSafeSubtitle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Safe access history"
-        android:textSize="14sp"
-        android:textColor="#666666"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="8dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
 
-    <ScrollView
+        <TextView
+            android:id="@+id/textSafeHistoryStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:text="@string/access_history_checking"
+            android:textSize="14sp"
+            android:textColor="#555555"
+            android:accessibilityLiveRegion="polite" />
+
+        <ProgressBar
+            android:id="@+id/progressSafeHistory"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:visibility="gone"
+            android:contentDescription="@string/access_history_loading" />
+
+        <Button
+            android:id="@+id/buttonRefreshSafeHistory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/access_history_refresh"
+            android:textAllCaps="false" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutSafeHistorySection"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:fillViewport="true"
-        android:clipToPadding="false">
+        android:orientation="vertical"
+        android:visibility="gone">
 
-        <LinearLayout
-            android:id="@+id/layoutSafeHistory"
+        <TextView
+            android:id="@+id/textSafeSubtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="12dp" />
+            android:text="@string/access_history_title"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#202020"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:paddingBottom="8dp" />
 
-    </ScrollView>
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:fillViewport="true"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:id="@+id/layoutSafeHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="12dp" />
+        </ScrollView>
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:id="@+id/spaceSafeHistory" />
 
     <Button
         android:id="@+id/buttonBackHome"
@@ -70,5 +119,4 @@
         android:layout_marginStart="12dp"
         android:layout_marginEnd="12dp"
         android:textAllCaps="false" />
-
 </LinearLayout>
