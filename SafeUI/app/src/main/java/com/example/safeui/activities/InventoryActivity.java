@@ -561,7 +561,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                                         return;
                                     }
 //----------USES create() from DataSync File-------------------
-                                    sync.create(name, quantity, barcode, user_id); 
+                                    sync.create(name, quantity, barcode, userId);
                                     dialog.dismiss();
 
                                 })
@@ -603,7 +603,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                     if(!beginInventoryRequest("Quantity added.")){
                         return;
                     }
-                    sync.increment(itemId, quantity, user_id);
+                    sync.increment(itemId, quantity, userId);
                     dialog.dismiss();
                 }));
         dialog.show();
@@ -661,7 +661,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                         }
 
                         //uses DataSync command
-                        sync.decrement(itemId, quantity, user_id);
+                        sync.decrement(itemId, quantity, userId);
                         dialog.dismiss();
                     });
 
@@ -677,7 +677,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                                 return;
                             }
                             //uses delete() from DataSync
-                            sync.delete(itemId, user_id);
+                            sync.delete(itemId, userId);
 
                             dialog.dismiss();
                         })

@@ -19,7 +19,8 @@ import okhttp3.WebSocketListener;
 
 public class ClientSocket
 {
-    private static final String URL = "ws://100.93.188.101:8765";
+   //private static final String URL = "ws://100.93.188.101:8765";
+   private static final String URL = "ws://127.0.0.1:8765";
     private static final long REPLY_TIMEOUT_MS = 30_000;
     private static final Gson GSON = new Gson();
     private static final OkHttpClient NETWORK_CLIENT = new OkHttpClient.Builder()

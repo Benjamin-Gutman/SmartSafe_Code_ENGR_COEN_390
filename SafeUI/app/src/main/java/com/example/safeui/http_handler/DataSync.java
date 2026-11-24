@@ -105,14 +105,14 @@ public class DataSync
         run(Commands.historyForItem(itemId), true, itemId);
     }
 
-    public void create(String name, int quantity, int user_id)
+    public void create(String name, int quantity, String barcode,  int user_id)
     {
-        run(Commands.createInventoryItem(name, quantity, user_id));
+        run(Commands.createInventoryItem(name, quantity,barcode ,user_id));
     }
 
-    public void update(int itemId, String name, int quantity, int user_id)
+    public void update(int itemId, String name, int quantity, String barcode,  int user_id)
     {
-        run(Commands.editInventoryItem(itemId, name, quantity, user_id));
+        run(Commands.editInventoryItem(itemId, name, quantity, barcode,  user_id));
     }
 
     public void increment(int itemId, int count,int user_id)
@@ -130,14 +130,14 @@ public class DataSync
         run(Commands.getByID(itemId));
     }
 
-    // public void fetchByBarcode( String item_barcode)
-    // {
-    //     run(Commands.getItemByBarcode(item_barcode));
-    // }
+     public void fetchByBarcode( String item_barcode)
+     {
+         run(Commands.getItemByBarcode(item_barcode));
+     }
 
-    public void delete(int itemId)
+    public void delete(int itemId, int user_id)
     {
-        run(Commands.deleteInventoryItem(itemId));
+        run(Commands.deleteInventoryItem(itemId, user_id));
     }
 
 
