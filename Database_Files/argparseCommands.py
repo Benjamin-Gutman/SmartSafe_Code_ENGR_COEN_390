@@ -47,6 +47,7 @@ def build_command_parser() -> SocketArgumentParser:
     p = sub.add_parser("create", help="create a new inventory item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--name", required=True, help="item name")
     p.add_argument("--quantity", type=int, required=True, help="initial quantity (> 0)")
+    p.add_argument("--barcode", help="item barcode")
  
     p = sub.add_parser("add", help="add quantity to an item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
@@ -148,6 +149,10 @@ def build_command_parser() -> SocketArgumentParser:
     p.add_argument("-isLocked", type=str2bool, required=True)
     p.add_argument("-isOpen", type=str2bool)
     p.add_argument("-alarm", type=str2bool)
+    p.add_argument("-user_id", type=int)
+
+    p = sub.add_parser("scanResult", help= "give safe status", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("-results")
 
 
 #Android comunication
