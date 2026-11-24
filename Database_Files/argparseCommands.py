@@ -48,14 +48,17 @@ def build_command_parser() -> SocketArgumentParser:
     p.add_argument("--name", required=True, help="item name")
     p.add_argument("--quantity", type=int, required=True, help="initial quantity (> 0)")
     p.add_argument("--barcode", help="item barcode")
+    p.add_argument("--user_id", type=int)
  
     p = sub.add_parser("add", help="add quantity to an item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
     p.add_argument("quantity", type=int)
+    p.add_argument("user_id", type=int)
  
     p = sub.add_parser("remove", help="remove quantity from an item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
     p.add_argument("quantity", type=int)
+    p.add_argument("user_id", type=int)
  
     p = sub.add_parser("get", help="get one item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
@@ -66,12 +69,18 @@ def build_command_parser() -> SocketArgumentParser:
     p.add_argument("item_id", type=int)
     p.add_argument("--name", required=True)
     p.add_argument("--quantity", type=int, required=True)
+    p.add_argument("--barcode", help="item barcode")
+    p.add_argument("--user_id", type=int)
  
     p = sub.add_parser("delete", help="delete an item", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("item_id", type=int)
+    p.add_argument("user_id", type=int)
  
     p = sub.add_parser("history", help="show inventory history", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--item-id", type=int, default=None, help="filter by item id")
+
+    p = sub.add_parser("getItemByBarcode", help="show inventory history", formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--barcode", help="item barcode")
 
 #--------------------------------------------------------------------
 #User table related commands

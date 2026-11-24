@@ -16,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 import DatabaseHelper as db_helper
 from Database import engine
 from Schemas.Inventory import InventoryCreate, InventoryResponse, InventoryUpdate, Inventory
-from Schemas.Inventory_History import InventoryHistoryResponse, InventoryHistoryCreate
+from Schemas.Inventory_History import InventoryHistoryResponse, InventoryHistory
 from Schemas.Users import UserUpdate, UserResponse, UserCreate, UserLogin
 from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, AccessHistoryResponse, AccessHistoryUpdate
  
@@ -79,15 +79,11 @@ def session_scope():
         session.close()
 
 
-CREATE_ACTION = "create"
-ADD_ACTION = "add"
-REMOVE_ACTION = "remove"
+def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistory]:
 
-def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistoryCreate]:
+    history: list[InventoryHistory] = []
 
-    run_time = datetime.now()
-    history: list[InventoryHistoryCreate] = []
-
+    # DatabaseHelper has no lookup by barcode, so index the existing items once.
     existing_by_barcode = {
         item.item_barcode: item for item in db_helper.get_all_inventory(db)
     }
@@ -96,10 +92,13 @@ def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistoryCreate]:
         existing = existing_by_barcode.get(incoming.item_barcode)
 
         if existing is not None:
-            difference = incoming.quantity - existing.quantity
-            if difference == 0:
+            if incoming.quantity == existing.quantity:
                 continue
 
+            # Remember which history rows already exist so only the new ones are returned.
+            known_ids = {
+                h.history_id for h in db_helper.get_inventory_history(db, existing.item_id)
+            }
             updated = db_helper.update_inventory(
                 db,
                 existing.item_id,
@@ -114,15 +113,10 @@ def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistoryCreate]:
                 existing_by_barcode.pop(incoming.item_barcode, None)
                 continue
 
-            history.append(
-                InventoryHistoryCreate(
-                    item_id=updated.item_id,
-                    item_barcode=updated.item_barcode,
-                    item_name=updated.item_name,
-                    quantity=abs(difference),
-                    action=ADD_ACTION if difference > 0 else REMOVE_ACTION,
-                    timestamp=run_time,
-                )
+            history.extend(
+                h
+                for h in db_helper.get_inventory_history(db, updated.item_id)
+                if h.history_id not in known_ids
             )
         else:
             new_item = db_helper.create_inventory(
@@ -137,17 +131,11 @@ def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistoryCreate]:
             # item instead of creating a duplicate.
             existing_by_barcode[new_item.item_barcode] = new_item
 
-            history.append(
-                InventoryHistoryCreate(
-                    item_id=new_item.item_id,
-                    item_barcode=new_item.item_barcode,
-                    item_name=new_item.item_name,
-                    quantity=new_item.quantity,
-                    action=CREATE_ACTION,
-                    timestamp=run_time,
-                )
-            )
+            # A brand new item has no history other than what create_inventory just wrote.
+            history.extend(db_helper.get_inventory_history(db, new_item.item_id))
+
     return history
+
  
 # Command execution
 def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
@@ -330,6 +318,9 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             #items = [Inventory.model_validate(d) for d in response["inventory"]]
             items = [Inventory.model_validate({"item_name": "", **d}) for d in response["inventory"]]
             history = sync_inventory(db, items)
+            tempAccessHistory.changes_made = history
+            tempAccessHistory.timestamp = datetime.now()
+            db_helper.create_access_history(db, tempAccessHistory)
             return ok(cmd, message="Inventory synced", history=[h.model_dump(mode="json") for h in history],)
 
             
