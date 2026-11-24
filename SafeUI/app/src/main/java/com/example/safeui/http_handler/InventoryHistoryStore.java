@@ -18,7 +18,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
     {
         public Integer item_id;
         public String item_name;
-        public String username;
+        public int user_id;
         public String action;
         public int quantity_change;
         public String event_time;
@@ -75,7 +75,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                 ContentValues values = new ContentValues();
                 values.put("item_id", item.item_id);
                 values.put("item_name", item.item_name);
-                values.put("username", item.username);
+                values.put("user_id", item.user_id);
                 values.put("quantity", item.quantity);
                 values.put("action", item.action);
                 values.put("timestamp", item.timestamp);
@@ -152,7 +152,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                         "action",
                         "timestamp",
                         "quantity_change",
-                        "username"
+                        "user_id"
                 },
                 selection,
                 arguments.toArray(new String[0]),
@@ -173,7 +173,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                 item.quantity_change = cursor.isNull(5)
                         ? null
                         : cursor.getInt(5);
-                item.username = cursor.isNull(6) ? null : cursor.getString(6);
+                item.user_id = cursor.isNull(6) ? null : cursor.getInt(6);
 
                 items.add(item);
             }
@@ -198,7 +198,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                 LegacyHistoryItem item = new LegacyHistoryItem();
                 item.item_id = cursor.isNull(0) ? null : cursor.getInt(0);
                 item.item_name = cursor.getString(1);
-                item.username = cursor.getString(2);
+                item.user_id = cursor.getInt(2);
                 item.action = cursor.getString(3);
                 item.quantity_change = cursor.getInt(4);
                 item.event_time = cursor.getString(5);

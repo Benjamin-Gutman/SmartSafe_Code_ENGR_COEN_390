@@ -30,6 +30,7 @@ public class Models
         public int item_id;
         public String item_name;
         public int quantity;
+        public String item_barcode;
     }
 
     public static class User
@@ -221,6 +222,9 @@ public class Models
                 return null;
             }
             return GSON.fromJson(user, User.class);
+
+
+
         }
 
         public List<User> asUsers()

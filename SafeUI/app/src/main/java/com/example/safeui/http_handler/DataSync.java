@@ -105,34 +105,24 @@ public class DataSync
         run(Commands.historyForItem(itemId), true, itemId);
     }
 
-    // public void create(String name, int quantity, String item_barcode)
-    // {
-    //     run(Commands.createInventoryItem(name, quantity));
-    // }
-
-    public void create(String name, int quantity)
+    public void create(String name, int quantity, int user_id)
     {
-        run(Commands.createInventoryItem(name, quantity));
+        run(Commands.createInventoryItem(name, quantity, user_id));
     }
 
-    // public void update(int itemId, String name, int quantity, String item_barcode)
-    // {
-    //     run(Commands.editInventoryItem(itemId, name, quantity, item_barcode));
-    // }
-
-    public void update(int itemId, String name, int quantity)
+    public void update(int itemId, String name, int quantity, int user_id)
     {
-        run(Commands.editInventoryItem(itemId, name, quantity));
+        run(Commands.editInventoryItem(itemId, name, quantity, user_id));
     }
 
-    public void increment(int itemId, int count)
+    public void increment(int itemId, int count,int user_id)
     {
-        run(Commands.incrementInventoryItem(itemId, count));
+        run(Commands.incrementInventoryItem(itemId, count, user_id));
     }
 
-    public void decrement(int itemId, int count)
+    public void decrement(int itemId, int count, int user_id)
     {
-        run(Commands.decrementInventoryItem(itemId, count));
+        run(Commands.decrementInventoryItem(itemId, count, user_id));
     }
 
     public void fetch(int itemId)
@@ -196,7 +186,6 @@ public class DataSync
         run(Commands.verifyUser(username,password));
     }
 
-    // User Access History related commands
 
     // --------------User Access History related commands--------------
     public void getAccessHistory(int access_id)

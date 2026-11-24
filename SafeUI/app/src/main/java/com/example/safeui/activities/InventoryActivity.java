@@ -499,6 +499,20 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         dialogLayout.addView(editQuantity);
 
+        EditText editBarcode = new EditText(this);
+        editBarcode.setHint("Barcode");
+        // Prevent spaces
+        editBarcode.setFilters(new android.text.InputFilter[] {
+            new android.text.InputFilter.LengthFilter(12), //currently set it as 12 characters...
+            (source, start, end, dest, dstart, dend) -> {
+                if (source.toString().contains(" ")) {
+                    return "";
+                }
+                return null;
+            }
+        });
+        dialogLayout.addView(editBarcode);
+
         //Add item button
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Add Inventory Item")
@@ -516,6 +530,8 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                                     String description = editDescription.getText().toString().trim();
 
                                     String quantityText = editQuantity.getText().toString().trim();
+
+                                    String barcode = editBarcode.getText().toString().trim();
 
                                     if (name.isEmpty()) {
                                         editName.setError("Enter an item name.");
@@ -539,8 +555,13 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                                     if (!beginInventoryRequest("Item added.")) {
                                         return;
                                     }
+
+                                    if (barcode.length() != 12) {
+                                        editBarcode.setError("Barcode must be exactly 12 digits");
+                                        return;
+                                    }
 //----------USES create() from DataSync File-------------------
-                                    sync.create(name, quantity);
+                                    sync.create(name, quantity, barcode, user_id); 
                                     dialog.dismiss();
 
                                 })
@@ -582,7 +603,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                     if(!beginInventoryRequest("Quantity added.")){
                         return;
                     }
-                    sync.increment(itemId, quantity);
+                    sync.increment(itemId, quantity, user_id);
                     dialog.dismiss();
                 }));
         dialog.show();
@@ -619,8 +640,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                         int quantity;
 
                         try {
-                            quantity = Integer.parseInt(editQuantity.getText().toString().trim()
-                            );
+                            quantity = Integer.parseInt(editQuantity.getText().toString().trim());
                         } catch (NumberFormatException e) {
                             editQuantity.setError("Enter a valid quantity.");
                             return;
@@ -641,7 +661,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                         }
 
                         //uses DataSync command
-                        sync.decrement(itemId, quantity);
+                        sync.decrement(itemId, quantity, user_id);
                         dialog.dismiss();
                     });
 
@@ -657,7 +677,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                                 return;
                             }
                             //uses delete() from DataSync
-                            sync.delete(itemId);
+                            sync.delete(itemId, user_id);
 
                             dialog.dismiss();
                         })
