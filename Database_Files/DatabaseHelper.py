@@ -145,33 +145,36 @@ def get_user(db: Session, user_id: int) -> UserModel | None:
     return db.get(UserModel, user_id)
 
 def get_user_by_username(db: Session, username: str) -> UserModel | None:
-    print("\n========== USER LOOKUP DEBUG ==========")
 
-    print("Username received:", repr(username))
+    # print("\n========== USER LOOKUP DEBUG ==========")
 
-    # Check database contents
-    users = db.scalars(select(UserModel)).all()
+    # print("Username received:", repr(username))
 
-    print("Number of users:", len(users))
+    # # Check database contents
+    # users = db.scalars(select(UserModel)).all()
 
-    for user in users:
-        print(
-            "ID:", user.user_id,
-            "| Username:", repr(user.username)
-        )
+    # print("Number of users:", len(users))
 
-    # Perform username lookup
-    statement = select(UserModel).where(
-        UserModel.username == username
-    )
+    # for user in users:
+    #     print(
+    #         "ID:", user.user_id,
+    #         "| Username:", repr(user.username)
+    #     )
 
-    db_user = db.scalars(statement).first()
+    # # Perform username lookup
+    # statement = select(UserModel).where(
+    #     UserModel.username == username
+    # )
 
-    print("Lookup result:", db_user)
+    # db_user = db.scalars(statement).first()
 
-    print("=======================================\n")
+    # print("Lookup result:", db_user)
 
-    return db_user
+    # print("=======================================\n")
+    statement = select(UserModel).where(UserModel.username == username)
+    return db.scalars(statement).first()
+
+   # return db_user
 
 def get_all_users(db: Session) -> list[UserModel]:
     statement = select(UserModel).order_by(UserModel.user_id)
