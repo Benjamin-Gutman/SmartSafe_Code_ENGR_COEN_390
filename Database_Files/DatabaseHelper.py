@@ -217,7 +217,7 @@ def delete_user(db: Session, user_id: int) -> bool:
     return True
 
 def verify_login(db: Session, user: UserLogin) -> bool:
-    db_user = db.get_user_by_username(db, user.username)
+    db_user = get_user_by_username(db, user.username)
     if db_user is None:
         return None #set like this to differenciate an inexistent user from a wrong password
     return db_user.password == user.password
