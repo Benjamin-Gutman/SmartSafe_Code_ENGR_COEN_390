@@ -11,7 +11,8 @@ def build_command(event, status=None, details=None):
 
     if event == "scan":
            log.info("Websocket feature for scan not implemented yet")
-            
+
+
     if event in ("door_opened", "door_closed", "locked", "unlocked", "alarm"):
 
             state = status["state"]
@@ -19,8 +20,13 @@ def build_command(event, status=None, details=None):
             is_open = status["door"] == "open"
             is_locked = state in ("locked", "alarm")
             is_alarm = state == "alarm"
-    
-            return (f"giveStatus -isLocked {str(is_locked).lower()} -isOpen {str(is_open).lower()} -alarm {str(is_alarm).lower()}")
+
+            msg = (f"giveStatus -isLocked {str(is_locked).lower()} -isOpen {str(is_open).lower()} -alarm {str(is_alarm).lower()}")
+
+            if event == "unlocked":
+                   msg = (f"{msg} -user_id {details['source']}")
+            
+            return msg
     
     
     
