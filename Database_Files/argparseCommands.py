@@ -125,12 +125,12 @@ def build_command_parser() -> SocketArgumentParser:
     p.add_argument("--password")
 
 #--------------------------------------------------------------------
-#User Access history part (NOT COMPLETE NOR FUNCTIONAL)
+#User Access history part
 #--------------------------------------------------------------------
-    p = sub.add_parser("createAccess", help= "Create an entry of Access", formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--user_id", type=int, required=True)
-    p.add_argument("--changes_made")
-    p.add_argument("--timestamp")
+    # p = sub.add_parser("createAccess", help= "Create an entry of Access", formatter_class=argparse.RawTextHelpFormatter)
+    # p.add_argument("--user_id", type=int, required=True)
+    # p.add_argument("--changes_made")
+    # p.add_argument("--timestamp")
 
     p = sub.add_parser("getAccessHistory", help= "Retrieve a specific Access entry", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--access_id", type=int, required=True)

@@ -223,7 +223,7 @@ def verify_login(db: Session, user: UserLogin) -> bool:
     return db_user.password == user.password
 
 def create_access_history(db: Session, access_history: AccessHistoryCreate) -> AccessHistoryResponse:
-    
+
     changes = [
         change.model_dump(mode="json")
         for change in access_history.changes_made
