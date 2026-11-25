@@ -44,7 +44,7 @@ def main():
             return
 
         log.info("event: %s %s", event, details)
-        client.send_event(event, status=safe.status())
+        client.send_event(event, status=safe.status(), **details)
 
         if event == "locked" and camera:
             camera.scan(on_scan)
