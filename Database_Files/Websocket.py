@@ -137,14 +137,17 @@ def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistory]:
 
     return history
 
-def createAccess(db: Session, inv: InventoryResponse, userID: int):
-    history = db_helper.get_inventory_history(db, inv.item_id)
-    newAccess = AccessHistoryCreate
-    newAccess.user_id = userID
-    newAccess.changes_made = history[-1]
-    newAccess.timestamp = datetime.now()
-    temp = db_helper.create_access_history(db, newAccess)
-    return
+def createAccess(inv: InventoryResponse, userID: int):
+    with session_scope() as db:
+        history = db_helper.get_inventory_history(db, inv.item_id)
+        histories = [InventoryHistory.model_validate(r.model_dump()) for r in history]
+        slimdHistories = [histories[-1]]
+        newAccess = AccessHistoryCreate
+        newAccess.user_id = userID
+        newAccess.changes_made = slimdHistories
+        newAccess.timestamp = datetime.now()
+        temp = db_helper.create_access_history(db, newAccess)
+        return
  
 # Command execution
 def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
@@ -159,7 +162,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             item = db_helper.create_inventory(
                 db, InventoryCreate(item_name=args.name, quantity=args.quantity, item_barcode=args.barcode)
             )
-            createAccess(db, item, args.user_id)
+            createAccess(item, args.user_id)
             return ok(cmd, message="Item created", inventory=item_to_dict(item))
  
         if cmd in ("add", "remove"):
@@ -167,7 +170,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             item = func(db, args.item_id, args.quantity)
             if item is None:
                 return error(f"Item {args.item_id} not found", cmd)
-            createAccess(db, item, args.user_id)
+            createAccess(item, args.user_id)
             return ok(cmd, message=f"Quantity {cmd}ed", inventory=item_to_dict(item))
  
         if cmd == "get":
@@ -187,14 +190,14 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             item = db_helper.update_inventory(db, args.item_id, update)
             if item is None:
                 return error(f"Item {args.item_id} not found", cmd)
-            createAccess(db, item, args.user_id)
+            createAccess(item, args.user_id)
             return ok(cmd, message="Item updated", inventory=item_to_dict(item))
  
         if cmd == "delete":
             deleted = db_helper.delete_inventory(db, args.item_id)
             if deleted == None:
                 return error(f"Item {args.item_id} not found", cmd)
-            createAccess(db, deleted, args.user_id)
+            createAccess(deleted, args.user_id)
             return ok(cmd, message=f"Item {args.item_id} deleted", item_id=args.item_id)
  
         if cmd == "history":
@@ -205,9 +208,16 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
 # User database commands (will always have keyword User)
 #--------------------------------------------------------------------
         if cmd == "createUser":
-            user = db_helper.create_user(
-                db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=args.isAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrivilege)
-            )
+            if args.name == "Keypad":
+                return error(f"Username {args.name} not permitted", cmd)
+            if len(db_helper.get_all_users(db)) <= 1:
+                user = db_helper.create_user(
+                    db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=True, hasOpenDoorPrivilege=True)
+                )
+            else:
+                user = db_helper.create_user(
+                    db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=args.isAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrivilege)
+                )
             return ok(cmd, message="User created", user=user_to_dict(user))
     
         if cmd == "getUserByID":
@@ -258,6 +268,8 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             return ok(cmd, message=f"User {args.user_id} deleted", user_id=args.user_id)
 
         if cmd == "verifyUser":
+            if args.username == "Keypad":
+                return error(f"User {args.username} cannot be used", cmd)
             login = UserLogin(username=args.username, password=args.password)
             verification = db_helper.verify_login(db, login)
             if verification is None:
@@ -268,7 +280,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
                 return ok(cmd, message=f"User {args.username} could not be verified with this Password")
 
 #--------------------------------------------------------------------
-#User Access history part (NOT FUNCTIONAL)
+#User Access history part
 #--------------------------------------------------------------------
 
         if cmd == "createAccess":
@@ -362,7 +374,6 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
  
 def handle_message(raw: str, parser: SocketArgumentParser) -> dict:
     try:
-        print("RECEIVED COMMAND:", repr(raw), flush=True)
         tokens = shlex.split(raw)
     except ValueError as exc:
         return error(f"Could not parse command: {exc}")
@@ -397,6 +408,17 @@ async def handler(websocket) -> None:
  
 async def main(host: str, port: int) -> None:
     db_helper.create_tables()
+    with session_scope() as db:
+        has_users = len(db_helper.get_all_users(db)) > 0
+        if not has_users:
+            db_helper.create_user(db, UserCreate(
+                    username="Keypad",
+                    email="null",
+                    password="null",
+                    isAdmin=False,
+                    hasOpenDoorPrivilege=False,
+                ),
+            )
     async with websockets.serve(handler, host, port):
         print(f"Inventory websocket listening on ws://{host}:{port}")
         await asyncio.Future()  # run forever
