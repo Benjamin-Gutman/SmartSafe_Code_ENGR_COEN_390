@@ -362,6 +362,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
  
 def handle_message(raw: str, parser: SocketArgumentParser) -> dict:
     try:
+        print("RECEIVED COMMAND:", repr(raw), flush=True)
         tokens = shlex.split(raw)
     except ValueError as exc:
         return error(f"Could not parse command: {exc}")
