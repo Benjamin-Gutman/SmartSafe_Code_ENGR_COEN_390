@@ -205,6 +205,8 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
 # User database commands (will always have keyword User)
 #--------------------------------------------------------------------
         if cmd == "createUser":
+            if args.name == "Keypad":
+                return error(f"Username {args.name} not permitted", cmd)
             user = db_helper.create_user(
                 db, UserCreate(username=args.name, email=args.email,password=args.password, isAdmin=args.isAdmin, hasOpenDoorPrivilege=args.hasOpenDoorPrivilege)
             )
@@ -258,6 +260,8 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             return ok(cmd, message=f"User {args.user_id} deleted", user_id=args.user_id)
 
         if cmd == "verifyUser":
+            if args.username == "Keypad":
+                return error(f"User {args.username} not found", cmd)
             login = UserLogin(username=args.username, password=args.password)
             verification = db_helper.verify_login(db, login)
             if verification is None:
@@ -396,6 +400,17 @@ async def handler(websocket) -> None:
  
 async def main(host: str, port: int) -> None:
     db_helper.create_tables()
+    with session_scope() as db:
+        has_users = len(db_helper.get_all_users(db)) > 0
+        if not has_users:
+            db_helper.create_user(db, UserCreate(
+                    username="Keypad",
+                    email="null",
+                    password="null",
+                    isAdmin=False,
+                    hasOpenDoorPrivilege=False,
+                ),
+            )
     async with websockets.serve(handler, host, port):
         print(f"Inventory websocket listening on ws://{host}:{port}")
         await asyncio.Future()  # run forever
