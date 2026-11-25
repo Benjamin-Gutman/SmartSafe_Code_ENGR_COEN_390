@@ -157,13 +157,15 @@ def get_user(db: Session, user_id: int) -> UserResponse | None:
     return user
 
 def get_user_by_username(db: Session, username: str) -> UserResponse | None:
+    # statement = select(UserModel).where(UserModel.username == username)
+    # user = db.scalars(statement).first()
+    # if user == None:
+    #     return None
+    # user = UserResponse.model_validate(user)
+    # user.password = None
+    # return user
     statement = select(UserModel).where(UserModel.username == username)
-    user = db.scalars(statement).first()
-    if user == None:
-        return None
-    user = UserResponse.model_validate(user)
-    user.password = None
-    return user
+    return db.scalars(statement).first()
 
 def get_all_users(db: Session) -> list[UserResponse]:
     statement = select(UserModel).order_by(UserModel.user_id)
