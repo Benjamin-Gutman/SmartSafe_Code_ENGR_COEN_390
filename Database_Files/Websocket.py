@@ -340,7 +340,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
         if cmd=="scanResult":
             response = json.loads(args.results)
             #items = [Inventory.model_validate(d) for d in response["inventory"]]
-            items = [Inventory.model_validate({"item_name": "", **d}) for d in response["inventory"]]
+            items = [Inventory.model_validate({"item_name": "", **d}) for d in response["list"]]
             history = sync_inventory(db, items)
             tempAccessHistory.changes_made = history
             tempAccessHistory.timestamp = datetime.now()
