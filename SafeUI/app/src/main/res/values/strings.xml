@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">SafeUI</string>
+    <string name="access_history_title">Safe access history</string>
+    <string name="access_history_refresh">Refresh</string>
+    <string name="access_history_checking">Checking account permissions…</string>
+    <string name="access_history_loading">Loading access history</string>
+    <string name="access_history_user">User: %1$s</string>
 </resources>

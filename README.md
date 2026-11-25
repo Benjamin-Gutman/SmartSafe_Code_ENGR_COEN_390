@@ -38,8 +38,7 @@ python Websocket.py
 cd ~/SmartSafe_Code_ENGR_COEN_390
 source myvenv/bin/activate
 
-cd HW_Interface
-python3 main.py
+python3 -m HW_Interface.main
 ```
 
 

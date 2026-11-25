@@ -7,7 +7,7 @@ from websockets.exceptions import WebSocketException
 from websockets.sync.client import connect
 
 from .command_helper import build_command
-import config
+from .. import config
 
 log = logging.getLogger("hw")
 
@@ -20,10 +20,10 @@ class Client:
 
 # -- Public Functions -- #
 
-    def send_event(self, event, status):
+    def send_event(self, event, status=None, **details):
         """ Call this from notify(). Returns immediately """
 
-        command = build_command(event, status)
+        command = build_command(event, status, details)
 
         if command is None:
             log.warning("no command defined for event: %s", event)

@@ -3,7 +3,7 @@
 import logging 
 import time 
 
-import config
+from . import config
 
 log = logging.getLogger("hw")
 
@@ -31,8 +31,11 @@ class Safe:
     def door_opened(self):
         """ Defines logic for when door is opened """
 
+        if self.state == OPEN:
+            self.notify("door_opened")
+
+
         if self.state == ALARM:
-            
             self.notify("door_opened")
 
         if self.state == UNLOCKED:

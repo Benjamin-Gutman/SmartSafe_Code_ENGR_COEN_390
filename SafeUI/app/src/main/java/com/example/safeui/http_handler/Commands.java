@@ -121,7 +121,7 @@ public class Commands
 
     public static String listAccessHistory()
     {
-        return "getAccessHistory";
+        return "getAccessList";
     }
 
     public static String updateAccessHistory(int access_id, int user_id, String changes_made, String timestamp)
