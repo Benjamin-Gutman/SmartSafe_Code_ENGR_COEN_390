@@ -22,6 +22,11 @@ public class ClientSocket
     private static final String URL = "ws://100.93.188.101:8765";
     private static final long REPLY_TIMEOUT_MS = 30_000;
     private static final Gson GSON = new Gson();
+    private static final OkHttpClient NETWORK_CLIENT = new OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.SECONDS)
+            .pingInterval(20, TimeUnit.SECONDS)
+            .build();
     private static final ClientSocket INSTANCE = new ClientSocket();
 
     public interface ReplyCallback
@@ -52,11 +57,7 @@ public class ClientSocket
 
     private ClientSocket()
     {
-        this(new OkHttpClient.Builder()
-                        .connectTimeout(10, TimeUnit.SECONDS)
-                        .readTimeout(0, TimeUnit.SECONDS)
-                        .pingInterval(20, TimeUnit.SECONDS)
-                        .build(),
+        this(NETWORK_CLIENT,
                 new Handler(Looper.getMainLooper()), URL, REPLY_TIMEOUT_MS);
     }
 
@@ -77,6 +78,13 @@ public class ClientSocket
     public static ClientSocket get()
     {
         return INSTANCE;
+    }
+
+    // A screen that sends several requests in sequence must not share its pending
+    // reply with the background safe-status monitor.
+    public static ClientSocket newConnection()
+    {
+        return new ClientSocket();
     }
 
     public synchronized void connect()
