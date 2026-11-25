@@ -1,4 +1,5 @@
 import logging
+import json
 
 from ..safe_state_machine import Safe
 
@@ -10,7 +11,9 @@ def build_command(event, status=None, details=None):
     details = details or {}
 
     if event == "scan":
-           log.info("Websocket feature for scan not implemented yet")
+       inventory = details.get("inventory") or []
+       items = [{"item_name": item.item_name, "quantity": item.quantity} for item in inventory]
+       return f"scanResults {json.dumps({'list': items})}"
 
 
     if event in ("door_opened", "door_closed", "locked", "unlocked", "alarm"):
