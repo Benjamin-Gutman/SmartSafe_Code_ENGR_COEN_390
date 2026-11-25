@@ -9,7 +9,7 @@ from .. import config
 
 
 # -- Populate with gpio values from config.py (ONLY OUTPUT VALUES) -- #
-OUTPUTS = (config.LOCK, config.RED_LED, config.BUZZER)
+OUTPUTS = (config.LOCK, config.RED_LED, config.BUZZER, config.LED_STRIP)
 
 class Pins:
 
