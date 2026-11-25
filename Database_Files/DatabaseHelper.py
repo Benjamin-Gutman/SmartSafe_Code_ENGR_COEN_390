@@ -157,15 +157,33 @@ def get_user(db: Session, user_id: int) -> UserResponse | None:
     return user
 
 def get_user_by_username(db: Session, username: str) -> UserResponse | None:
-    # statement = select(UserModel).where(UserModel.username == username)
-    # user = db.scalars(statement).first()
-    # if user == None:
-    #     return None
-    # user = UserResponse.model_validate(user)
-    # user.password = None
-    # return user
-    statement = select(UserModel).where(UserModel.username == username)
-    return db.scalars(statement).first()
+    print("\n========== USER LOOKUP DEBUG ==========")
+
+    print("Username received:", repr(username))
+
+    # Check database contents
+    users = db.scalars(select(UserModel)).all()
+
+    print("Number of users:", len(users))
+
+    for user in users:
+        print(
+            "ID:", user.user_id,
+            "| Username:", repr(user.username)
+        )
+
+    # Perform username lookup
+    statement = select(UserModel).where(
+        UserModel.username == username
+    )
+
+    db_user = db.scalars(statement).first()
+
+    print("Lookup result:", db_user)
+
+    print("=======================================\n")
+
+    return db_user
 
 def get_all_users(db: Session) -> list[UserResponse]:
     statement = select(UserModel).order_by(UserModel.user_id)
