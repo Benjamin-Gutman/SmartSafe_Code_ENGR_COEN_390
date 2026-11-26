@@ -82,6 +82,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                 values.put("timestamp_micros", item.getTimestampMicros());
                 values.put("source_order", order++);
                 values.put("quantity_change", item.quantity_change);
+                values.put("item_barcode", item.item_barcode);
 
                 db.insertOrThrow(TABLE, null, values);
             }
@@ -152,6 +153,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                         "action",
                         "timestamp",
                         "quantity_change",
+                        "item_barcode",
                 },
                 selection,
                 arguments.toArray(new String[0]),
@@ -172,7 +174,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                 item.quantity_change = cursor.isNull(5)
                         ? null
                         : cursor.getInt(5);
-
+                item.item_barcode = cursor.getString(6);
                 items.add(item);
             }
         }

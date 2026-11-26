@@ -57,6 +57,35 @@
         android:paddingTop="12dp"
         android:paddingBottom="8dp" />
 
+    <LinearLayout
+        android:id="@+id/layoutIncompleteNotice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:background="#950F0F"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/textIncompleteNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/buttonConfigureIncomplete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:backgroundTint="#181C2A"
+            android:text="Configure items"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"

@@ -19,7 +19,7 @@ public class Commands
 
     public static String editInventoryItem(int item_id, String item_name, int quantity, String item_barcode, int user_id)
     {
-        return "update " + item_id + " --name " + quote(item_name) + " --quantity " + quantity + " --barcode " + item_barcode + " --user_id" + user_id;
+        return "update " + item_id + " --name " + quote(item_name) + " --quantity " + quantity + " --barcode " + item_barcode + " --user_id " + user_id;
     }
 
     public static String incrementInventoryItem(int item_id, int inc_count, int user_id)
