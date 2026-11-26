@@ -52,7 +52,10 @@ class Keypad:
         last = None
         next_time = time.monotonic()
         while not self.stop.is_set():
-            key = self.scan_matrix()
+            try:
+                key = self.scan_matrix()
+            except OSError:
+                key = last
             if key is not None and key != last:
                 self._handle_key(key)
             last = key
