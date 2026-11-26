@@ -26,8 +26,11 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import java.util.ArrayList;
 
 public class InventoryActivity extends AppCompatActivity implements DataSync.Listener {
     private DataSync sync;
@@ -58,6 +61,21 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     private boolean destroyed = false;
     private boolean databaseClosing = false;
 
+    // Will notify the user if there are inventory items that are "empty" aka that
+    // barcode was scanned, creating item, but no actual item attached to them
+    // will force the user to actually set the items
+
+    private LinearLayout layoutIncompleteNotice;
+    private TextView textIncompleteNotice;
+    private Button buttonConfigureIncomplete;
+    private final List<IncompleteItem> incompleteItems = new ArrayList<>();
+    private boolean setupUpdatePending = false;
+    private int currentIncompleteIndex = 0;
+
+    private Button buttonRefreshInventory;
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +87,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         Button buttonBackHome = findViewById(R.id.buttonBackHome);
         textInventoryTitle = findViewById(R.id.textInventoryTitle);
         textInventorySubtitle = findViewById(R.id.textInventorySubtitle);
+
 
         // Keep the existing screen's login requirement. The logged-in user is
         // not used as the actor of downloaded history: the Pi does not send one.
@@ -86,6 +105,9 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         databaseHelper = new DatabaseHelper(getApplicationContext());
         historyStore = new InventoryHistoryStore(databaseHelper);
         sync = new DataSync(this, new InventoryStore(databaseHelper), historyStore);
+
+
+
 
         toolbarInventory.inflateMenu(R.menu.inventory_menu);
         toolbarInventory.setOnMenuItemClickListener(item -> {
@@ -105,6 +127,37 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             }
             sendNextRefresh();
             return true;
+        });
+        //stuff relating to if theres an item missing
+        layoutIncompleteNotice = findViewById(R.id.layoutIncompleteNotice);
+        textIncompleteNotice = findViewById(R.id.textIncompleteNotice);
+        buttonConfigureIncomplete = findViewById(R.id.buttonConfigureIncomplete);
+        //checks for "empty" items added.
+        checkIncompleteItems();
+
+        buttonConfigureIncomplete.setOnClickListener(v -> {
+            if (!incompleteItems.isEmpty()) {
+                currentIncompleteIndex = 0;
+                showNextIncompleteItem();
+            }
+        });
+
+
+        buttonRefreshInventory = findViewById(R.id.buttonRefreshInventory);
+        buttonRefreshInventory.setOnClickListener(v -> {
+
+            if (requestInFlight) {
+                Toast.makeText(this, "Please wait for update.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (showingHistory) {
+                Toast.makeText(this, "Please return to inventory to refresh.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            inventoryRefreshPending = true;
+            sendNextRefresh();
         });
 
         buttonAddItem.setOnClickListener(v -> showAddDialog());
@@ -126,6 +179,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         }
 
         if (layoutInventoryItems != null && databaseHelper != null) {
+            checkIncompleteItems();
             updateInventoryDisplay();
         }
     }
@@ -159,20 +213,42 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             historyRefreshPending = true;
         }
         updateInventoryDisplay();
+        checkIncompleteItems();
+
+        if (setupUpdatePending) {
+            setupUpdatePending = false;
+
+            if (!incompleteItems.isEmpty()) {
+                currentIncompleteIndex = 0;
+                showNextIncompleteItem();
+            } else {
+                Toast.makeText(
+                        this,
+                        "All inventory items have been configured!",
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+        }
         sendNextRefresh();
     }
 
     @Override
     public void onError(String message) {
         requestInFlight = false;
+        buttonRefreshInventory.setEnabled(true); // in case refresh fails
         pendingSuccessMessage = null;
+        setupUpdatePending = false;
 
         if (destroyed || isFinishing()) {
             closeDatabaseWhenIdle();
             return;
         }
-
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        new AlertDialog.Builder(this)
+                .setTitle("Server Error")
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .show();
+       // Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         updateInventoryDisplay(); // Keep displaying the last saved data.
         sendNextRefresh();
     }
@@ -195,14 +271,17 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             historyRefreshPending = false;
             requestInFlight = true;
             buttonAddItem.setEnabled(false);
+            buttonRefreshInventory.setEnabled(false);
             sync.refreshHistory();
         } else if (inventoryRefreshPending) {
             inventoryRefreshPending = false;
             requestInFlight = true;
             buttonAddItem.setEnabled(false);
+            buttonRefreshInventory.setEnabled(false);
             sync.refreshAll();
         } else {
             buttonAddItem.setEnabled(true);
+            buttonRefreshInventory.setEnabled(true);
         }
     }
 
@@ -215,21 +294,24 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         requestInFlight = true;
         pendingSuccessMessage = successMessage;
         buttonAddItem.setEnabled(false);
+        buttonRefreshInventory.setEnabled(false);
         return true;
     }
 
     private void updateInventoryDisplay() {
         buttonAddItem.setEnabled(!requestInFlight);
-
+        buttonRefreshInventory.setEnabled(!requestInFlight);
         if (showingHistory) {
             textInventoryTitle.setText("Inventory History");
             textInventorySubtitle.setText("Records of inventory changes");
             buttonAddItem.setVisibility(View.GONE);
+            buttonRefreshInventory.setVisibility(View.GONE);
             loadInventoryHistory();
         } else {
             textInventoryTitle.setText("Inventory");
             textInventorySubtitle.setText("Manage the items in your safe");
             buttonAddItem.setVisibility(View.VISIBLE);
+            buttonRefreshInventory.setVisibility(View.VISIBLE);
             loadInventory();
         }
     }
@@ -285,6 +367,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
 
             addHistoryCard(
                     event.item_name,
+                    event.item_barcode,
                     historyUsername(event.username),
                     historyActionLabel(event.action),
                     quantityLabel + event.quantity,
@@ -297,6 +380,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             for (InventoryHistoryStore.LegacyHistoryItem event : legacy) {
                 addHistoryCard(
                         event.item_name,
+                        "barcode",
                         historyUsername(event.username),
                         historyActionLabel(event.action),
                         "Recorded amount: " + event.quantity_change + "\nRemaining quantity: Unknown",
@@ -307,6 +391,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
 
     private void addHistoryCard(
             String itemName,
+            String barcode,
             String username,
             String action,
             String quantity,
@@ -333,6 +418,9 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         textName.setTextColor(0xFF202124);
         textName.setTypeface(null, android.graphics.Typeface.BOLD);
         historyCard.addView(textName);
+
+        //barcode
+        addHistoryDetail(historyCard, "Barcode: " + (barcode == null || barcode.trim().isEmpty() ? "Unknown" : barcode));
 
         //user
         addHistoryDetail(historyCard, "User: " + username);
@@ -400,20 +488,27 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             int nameColumn = cursor.getColumnIndexOrThrow("item_name");
             int descriptionColumn = cursor.getColumnIndexOrThrow("description");
             int quantityColumn = cursor.getColumnIndexOrThrow("quantity");
+            int barcodeColumn = cursor.getColumnIndexOrThrow("item_barcode");
 
             while (cursor.moveToNext()) {
                 int itemId = cursor.getInt(idColumn);
                 String name = cursor.getString(nameColumn);
+                if (Objects.equals(name, "")){
+                    name = "NO NAME SET";
+                }
                 String description = cursor.getString(descriptionColumn);
                 int quantity = cursor.getInt(quantityColumn);
+                String barcode = cursor.getString(barcodeColumn);
 
                 addInventoryRow(
                         itemId,
                         name,
                         description,
-                        quantity
+                        quantity,
+                        barcode
                 );
             }
+            checkIncompleteItems();
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -425,7 +520,8 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             int itemId,
             String name,
             String description,
-            int quantity
+            int quantity,
+            String barcode
     ) {
         //------------------layout specs----------------
         LinearLayout itemCard = new LinearLayout(this);
@@ -471,10 +567,16 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         buttonRemove.setAllCaps(false);
         itemCard.addView(buttonRemove);
 
+        Button buttonUpdate = new Button(this);
+        buttonUpdate.setText("Update Details");
+        buttonUpdate.setAllCaps(false);
+        itemCard.addView(buttonUpdate);
+
+
         //------------------end of layout specs----------------
         buttonAdd.setOnClickListener(v -> showAddQuantityDialog(itemId, name));
         buttonRemove.setOnClickListener(v -> showRemoveDialog(itemId, name, quantity));
-
+        buttonUpdate.setOnClickListener(v -> showUpdateDialog(itemId, name, quantity, barcode));
         layoutInventoryItems.addView(itemCard);
     }
 
@@ -499,6 +601,19 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         dialogLayout.addView(editQuantity);
 
+        EditText editBarcode = new EditText(this);
+        editBarcode.setHint("Barcode");
+        // Prevent spaces
+        editBarcode.setFilters(new android.text.InputFilter[] {
+            (source, start, end, dest, dstart, dend) -> {
+                if (source.toString().contains(" ")) {
+                    return "";
+                }
+                return null;
+            }
+        });
+        dialogLayout.addView(editBarcode);
+
         //Add item button
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Add Inventory Item")
@@ -516,6 +631,8 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                                     String description = editDescription.getText().toString().trim();
 
                                     String quantityText = editQuantity.getText().toString().trim();
+
+                                    String barcode = editBarcode.getText().toString().trim();
 
                                     if (name.isEmpty()) {
                                         editName.setError("Enter an item name.");
@@ -536,11 +653,18 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                                         return;
                                     }
 
+                                    if (barcode.isEmpty()) {
+                                        editBarcode.setError("Barcode should be set");
+                                        return;
+                                    }
+
                                     if (!beginInventoryRequest("Item added.")) {
                                         return;
                                     }
+
+
 //----------USES create() from DataSync File-------------------
-                                    sync.create(name, quantity);
+                                    sync.create(name, quantity, barcode, userId);
                                     dialog.dismiss();
 
                                 })
@@ -582,7 +706,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                     if(!beginInventoryRequest("Quantity added.")){
                         return;
                     }
-                    sync.increment(itemId, quantity);
+                    sync.increment(itemId, quantity, userId);
                     dialog.dismiss();
                 }));
         dialog.show();
@@ -619,8 +743,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                         int quantity;
 
                         try {
-                            quantity = Integer.parseInt(editQuantity.getText().toString().trim()
-                            );
+                            quantity = Integer.parseInt(editQuantity.getText().toString().trim());
                         } catch (NumberFormatException e) {
                             editQuantity.setError("Enter a valid quantity.");
                             return;
@@ -641,7 +764,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                         }
 
                         //uses DataSync command
-                        sync.decrement(itemId, quantity);
+                        sync.decrement(itemId, quantity, userId);
                         dialog.dismiss();
                     });
 
@@ -657,7 +780,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                                 return;
                             }
                             //uses delete() from DataSync
-                            sync.delete(itemId);
+                            sync.delete(itemId, userId);
 
                             dialog.dismiss();
                         })
@@ -666,6 +789,114 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         });
         dialog.show();
     }
+
+
+    private void showUpdateDialog(
+            int itemId,
+            String currentName,
+            int currentQuantity,
+            String currentBarcode
+    ) {
+        // Layout specifications
+        LinearLayout dialogLayout = new LinearLayout(this);
+        dialogLayout.setOrientation(LinearLayout.VERTICAL);
+        dialogLayout.setPadding(48, 16, 48, 0);
+
+        // Item name
+        EditText editName = new EditText(this);
+        editName.setHint("Item name");
+        editName.setSingleLine(true);
+        editName.setText(currentName);
+        dialogLayout.addView(editName);
+
+        // Quantity
+        EditText editQuantity = new EditText(this);
+        editQuantity.setHint("Quantity");
+        editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        editQuantity.setText(String.valueOf(currentQuantity));
+        dialogLayout.addView(editQuantity);
+
+        // Barcode
+        EditText editBarcode = new EditText(this);
+        editBarcode.setHint("Barcode");
+        editBarcode.setSingleLine(true);
+        editBarcode.setText(currentBarcode);
+
+        editBarcode.setFilters(new android.text.InputFilter[] {
+                (source, start, end, dest, dstart, dend) -> {
+                    if (source.toString().contains(" ")) {
+                        return "";
+                    }
+                    return null;
+                }
+        });
+
+        dialogLayout.addView(editBarcode);
+
+        // Update dialog
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Update Inventory Item")
+                .setView(dialogLayout)
+                .setNeutralButton("Cancel", null)
+                .setPositiveButton("Update", null)
+                .create();
+
+        dialog.setOnShowListener(ignored ->
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                        .setOnClickListener(v -> {
+
+                            String name = editName.getText().toString().trim();
+                            String quantityText = editQuantity.getText().toString().trim();
+                            String barcode = editBarcode.getText().toString().trim();
+
+                            // Validate name
+                            if (name.isEmpty()) {
+                                editName.setError("Enter an item name.");
+                                return;
+                            }
+
+                            // Validate quantity
+                            int quantity;
+                            try {
+                                quantity = Integer.parseInt(quantityText);
+                            } catch (NumberFormatException e) {
+                                editQuantity.setError("Enter a valid quantity.");
+                                return;
+                            }
+
+                            if (quantity <= 0) {
+                                editQuantity.setError(
+                                        "Quantity must be greater than zero."
+                                );
+                                return;
+                            }
+
+                            // Validate barcode
+                            if (barcode.isEmpty()) {
+                                editBarcode.setError(
+                                        "Enter barcode"
+                                );
+                                return;
+                            }
+
+                            // Prevent multiple requests
+                            if (!beginInventoryRequest("Item updated.")) {
+                                return;
+                            }
+
+                            // Send update request
+                            setupUpdatePending = true;
+                            sync.update(itemId, name, quantity, barcode, userId);
+                            dialog.dismiss();
+                        })
+        );
+        dialog.show();
+    }
+
+
+
+
+
 
     @Override
     protected void onDestroy() {
@@ -689,4 +920,151 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         });
         historyReader.shutdown();
     }
+
+    //items that only have barcode basically
+    // Will need to use a new type of class so that it can actually save them even without names.
+    private static class IncompleteItem {
+        int itemId;
+        String barcode;
+        int quantity;
+
+        IncompleteItem(int itemId, String barcode, int quantity) {
+            this.itemId = itemId;
+            this.barcode = barcode;
+            this.quantity = quantity;
+        }
+    }
+
+    private void checkIncompleteItems() {
+        //need to clean incomplete items before checking again.
+        incompleteItems.clear();
+        Cursor cursor = databaseHelper.getInventory();
+
+        if (cursor != null) {
+            try {
+                int idColumn = cursor.getColumnIndexOrThrow("item_id");
+                int nameColumn = cursor.getColumnIndexOrThrow("item_name");
+                int quantityColumn = cursor.getColumnIndexOrThrow("quantity");
+                int barcodeColumn = cursor.getColumnIndexOrThrow("item_barcode");
+                while (cursor.moveToNext()) {
+                    String name = cursor.getString(nameColumn);
+                    if (name == null || name.trim().isEmpty()) {
+                        incompleteItems.add(new IncompleteItem(
+                                cursor.getInt(idColumn),
+                                cursor.getString(barcodeColumn),
+                                cursor.getInt(quantityColumn)
+                        ));
+                    }
+                }
+            } finally {
+                cursor.close();
+            }
+        }
+
+        updateIncompleteNotification();
+    }
+
+    private void updateIncompleteNotification() {
+        int count = incompleteItems.size();
+        if (count == 0) {
+            layoutIncompleteNotice.setVisibility(View.GONE);
+            return;
+        }
+        layoutIncompleteNotice.setVisibility(View.VISIBLE);
+        String message = "You have " + count + " item(s) not configured";
+        textIncompleteNotice.setText(message);
+    }
+
+    private void showNextIncompleteItem() {
+
+        if (incompleteItems.isEmpty()) {
+            Toast.makeText(this, "All inventory items have been configured!", Toast.LENGTH_LONG).show();
+            updateIncompleteNotification();
+            updateInventoryDisplay();
+            return;
+        }
+
+        if (currentIncompleteIndex >= incompleteItems.size()) {
+            currentIncompleteIndex = 0;
+        }
+
+        IncompleteItem item = incompleteItems.get(currentIncompleteIndex);
+        showIncompleteItemDialog(item);
+    }
+    private void showIncompleteItemDialog(IncompleteItem item) {
+
+        LinearLayout dialogLayout = new LinearLayout(this);
+        dialogLayout.setOrientation(LinearLayout.VERTICAL);
+        dialogLayout.setPadding(48, 16, 48, 0);
+
+        EditText editName = new EditText(this);
+        editName.setHint("Item name");
+        editName.setSingleLine(true);
+        dialogLayout.addView(editName);
+
+        EditText editQuantity = new EditText(this);
+        editQuantity.setHint("Quantity");
+        editQuantity.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        editQuantity.setText(String.valueOf(item.quantity));
+        dialogLayout.addView(editQuantity);
+
+        EditText editDescription = new EditText(this);
+        editDescription.setHint("Description (optional)");
+        dialogLayout.addView(editDescription);
+
+        TextView barcodeText = new TextView(this);
+        barcodeText.setText("Barcode: " + item.barcode);
+        barcodeText.setPadding(0, 16, 0, 16);
+        dialogLayout.addView(barcodeText);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Configure Inventory Item")
+                .setMessage("Please provide the missing information.")
+                .setView(dialogLayout)
+                .setPositiveButton("Save", null)
+                .create();
+
+        // User cannot skip incomplete items.
+        dialog.setCancelable(true);
+        dialog.setCanceledOnTouchOutside(true);
+        dialog.setOnShowListener(ignored ->
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                        .setOnClickListener(v -> {
+
+                            String name = editName.getText().toString().trim();
+
+                            String quantityText = editQuantity.getText().toString().trim();
+
+                            String description = editDescription.getText().toString().trim();
+
+                            if (name.isEmpty()) {
+                                editName.setError("Enter an item name.");
+                                return;
+                            }
+
+                            int quantity;
+                            try {
+                                quantity = Integer.parseInt(quantityText);
+                            } catch (NumberFormatException e) {
+                                editQuantity.setError("Enter a valid quantity.");
+                                return;
+                            }
+
+                            if (quantity <= 0) {
+                                editQuantity.setError("Quantity must be greater than zero.");
+                                return;
+                            }
+                            if (!beginInventoryRequest("Item updated.")) {
+                                return;
+                            }
+                            // Mark this as an incomplete-item setup update.
+                            setupUpdatePending = true;
+                            sync.update(item.itemId, name, quantity, item.barcode, userId);
+                            dialog.dismiss();
+                        })
+        );
+        dialog.show();
+    }
+
+
 }
+
