@@ -35,7 +35,8 @@ class Pins:
 
         # Configure outputs and set to default low #
         for pin in OUTPUTS:
-            settings[pin] = gpiod.LineSettings(direction = Direction.OUTPUT, output_value = Value.INACTIVE)
+
+            settings[pin] = gpiod.LineSettings(direction = Direction.OUTPUT, output_value = Value.ACTIVE if pin ==config.LED_STRIP else Value.INACTIVE) 
 
         # Creates LineRequest Objects Tied to Chip #
         self._lines = gpiod.request_lines(config.GPIO_CHIP, consumer="safe-hw", config = settings)
