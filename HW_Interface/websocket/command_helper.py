@@ -11,7 +11,12 @@ def build_command(event, status=None, details=None):
 
     if event == "scan":
            log.info("Websocket feature for scan not implemented yet")
-            
+
+    if event == "keypad":
+           password = details.get("password") or ""
+           log.info(f"validatePin -pin {password}")
+           return f"validatePin -pin {password}"
+
     if event in ("door_opened", "door_closed", "locked", "unlocked", "alarm"):
 
             state = status["state"]
