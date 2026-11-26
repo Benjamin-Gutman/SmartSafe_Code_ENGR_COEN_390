@@ -5,7 +5,7 @@ from datetime import timedelta
 import gpiod
 from gpiod.line import Bias, Direction, Edge, Value
 
-import config
+from .. import config
 
 
 # -- Populate with gpio values from config.py (ONLY OUTPUT VALUES) -- #

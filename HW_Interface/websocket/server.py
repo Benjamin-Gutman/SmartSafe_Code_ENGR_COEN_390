@@ -7,7 +7,7 @@ import logging
 import socket
 
 from .command_helper import build_reply
-import config
+from .. import config
 
 from websockets.frames import Frame, Opcode
 from websockets.http11 import Request
