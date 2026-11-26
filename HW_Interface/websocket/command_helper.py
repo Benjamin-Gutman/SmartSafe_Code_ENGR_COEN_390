@@ -12,8 +12,11 @@ def build_command(event, status=None, details=None):
 
     if event == "scan":
        inventory = details.get("inventory") or []
-       items = [{"item_name": item.item_name, "quantity": item.quantity} for item in inventory]
-       return f"scanResults {json.dumps({'list': items})}"
+       items = [{"item_barcode": item.item_barcode, "quantity": item.quantity} for item in inventory]
+       
+       payload = json.dumps({"list": items})
+       return f"scanResult -results {json.dumps(payload)}"
+
 
 
     if event in ("door_opened", "door_closed", "locked", "unlocked", "alarm"):

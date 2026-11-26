@@ -23,7 +23,7 @@ from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, Acc
  
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
-tempAccessHistory : AccessHistoryCreate
+tempAccessHistory = AccessHistoryCreate(user_id=0, changes_made=[], timestamp=datetime.now())
 
 class Status(BaseModel):
     isLocked: bool = True

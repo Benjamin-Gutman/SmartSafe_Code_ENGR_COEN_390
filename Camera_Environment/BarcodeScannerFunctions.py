@@ -30,5 +30,5 @@ def get_barcodes(processed_frame: np.ndarray) -> list[Inventory]:
     values, counts = np.unique(barcode_values, return_counts = True)
     inventory: list[Inventory] = []
     for i in range(len(values)):
-        inventory.append(Inventory(item_name=values[i], quantity=int(counts[i])))
+        inventory.append(Inventory(item_barcode=values[i], quantity=int(counts[i])))
     return inventory
