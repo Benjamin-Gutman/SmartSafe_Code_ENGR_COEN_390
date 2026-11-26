@@ -11,6 +11,7 @@ from .hw_drivers.gpio import Pins
 from .websocket.client import Client
 from .websocket.server import Server
 from .hw_drivers.camera import make_camera
+from .hw_drivers.keypad import Keypad
 
 log = logging.getLogger("hw")
 
