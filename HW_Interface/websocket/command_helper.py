@@ -8,9 +8,7 @@ def build_command(event, status=None, details=None):
     """ Turns a notify() event into the command line the backend process receives. Returns None if unknown """
     
     details = details or {}
-
-    if event == "scan":
-           log.info("Websocket feature for scan not implemented yet")
+    
 
     if event == "keypad":
            password = details.get("password") or ""
