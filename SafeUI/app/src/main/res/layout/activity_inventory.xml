@@ -17,11 +17,10 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbarInventory"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
+        android:layout_height="27dp"
         android:background="#F5F6F8"
-        android:layout_marginTop="24dp"
-        app:title=""
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:title="" />
 
     <TextView
         android:id="@+id/textInventoryTitle"
@@ -105,12 +104,21 @@
     </ScrollView>
 
     <Button
+        android:id="@+id/buttonRefreshInventory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:backgroundTint="#009688"
+        android:text="Refresh Inventory"
+        android:textColor="#FFFFFF" />
+
+    <Button
         android:id="@+id/buttonBackHome"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Back to Home"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="12dp"
+        android:text="Back to Home"
         android:textAllCaps="false" />
 
 </LinearLayout>

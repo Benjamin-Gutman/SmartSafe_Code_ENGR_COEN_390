@@ -72,6 +72,8 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     private boolean setupUpdatePending = false;
     private int currentIncompleteIndex = 0;
 
+    private Button buttonRefreshInventory;
+
 
 
     @Override
@@ -85,6 +87,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         Button buttonBackHome = findViewById(R.id.buttonBackHome);
         textInventoryTitle = findViewById(R.id.textInventoryTitle);
         textInventorySubtitle = findViewById(R.id.textInventorySubtitle);
+
 
         // Keep the existing screen's login requirement. The logged-in user is
         // not used as the actor of downloaded history: the Pi does not send one.
@@ -137,6 +140,24 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                 currentIncompleteIndex = 0;
                 showNextIncompleteItem();
             }
+        });
+
+
+        buttonRefreshInventory = findViewById(R.id.buttonRefreshInventory);
+        buttonRefreshInventory.setOnClickListener(v -> {
+
+            if (requestInFlight) {
+                Toast.makeText(this, "Please wait for update.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (showingHistory) {
+                Toast.makeText(this, "Please return to inventory to refresh.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            inventoryRefreshPending = true;
+            sendNextRefresh();
         });
 
         buttonAddItem.setOnClickListener(v -> showAddDialog());
@@ -214,6 +235,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
     @Override
     public void onError(String message) {
         requestInFlight = false;
+        buttonRefreshInventory.setEnabled(true); // in case refresh fails
         pendingSuccessMessage = null;
         setupUpdatePending = false;
 
@@ -249,14 +271,17 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
             historyRefreshPending = false;
             requestInFlight = true;
             buttonAddItem.setEnabled(false);
+            buttonRefreshInventory.setEnabled(false);
             sync.refreshHistory();
         } else if (inventoryRefreshPending) {
             inventoryRefreshPending = false;
             requestInFlight = true;
             buttonAddItem.setEnabled(false);
+            buttonRefreshInventory.setEnabled(false);
             sync.refreshAll();
         } else {
             buttonAddItem.setEnabled(true);
+            buttonRefreshInventory.setEnabled(true);
         }
     }
 
@@ -269,21 +294,24 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         requestInFlight = true;
         pendingSuccessMessage = successMessage;
         buttonAddItem.setEnabled(false);
+        buttonRefreshInventory.setEnabled(false);
         return true;
     }
 
     private void updateInventoryDisplay() {
         buttonAddItem.setEnabled(!requestInFlight);
-
+        buttonRefreshInventory.setEnabled(!requestInFlight);
         if (showingHistory) {
             textInventoryTitle.setText("Inventory History");
             textInventorySubtitle.setText("Records of inventory changes");
             buttonAddItem.setVisibility(View.GONE);
+            buttonRefreshInventory.setVisibility(View.GONE);
             loadInventoryHistory();
         } else {
             textInventoryTitle.setText("Inventory");
             textInventorySubtitle.setText("Manage the items in your safe");
             buttonAddItem.setVisibility(View.VISIBLE);
+            buttonRefreshInventory.setVisibility(View.VISIBLE);
             loadInventory();
         }
     }
@@ -480,6 +508,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
                         barcode
                 );
             }
+            checkIncompleteItems();
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -1035,6 +1064,7 @@ public class InventoryActivity extends AppCompatActivity implements DataSync.Lis
         );
         dialog.show();
     }
+
 
 }
 
