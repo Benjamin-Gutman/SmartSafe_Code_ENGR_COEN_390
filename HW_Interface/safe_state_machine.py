@@ -60,8 +60,8 @@ class Safe:
 
     def unlock(self, source):
         """ Unlocks door if it is closed and sets a timer """
-
-        if self.state == OPEN:
+        
+        if self.state in (OPEN, UNLOCKED):
             return
 
         # Set state to unlock or open and clear alarm #
