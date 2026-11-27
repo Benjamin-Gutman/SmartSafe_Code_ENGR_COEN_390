@@ -416,6 +416,23 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             db_helper.create_access_history(db, tempAccessHistory)
             return ok(cmd, message="Inventory synced", history=[h.model_dump(mode="json") for h in history],)
 
+        if cmd == "validatePin":
+            keyuser = UserLogin(username="Keypad", password=args.pin)
+            isCorrect = db_helper.verify_login(db, keyuser)
+            if isCorrect == None:
+                return error("cant fint keypad User", cmd)
+            elif isCorrect:
+                sendHW("unlock")
+            return ok(cmd, message="status validated")
+
+        if cmd == "setDoorPin":
+            update = db_helper.update_user_password(
+                user_id=1, new_password=args.pin
+            )
+            if user is None:
+                return error("User keypad not found", cmd)
+            return ok(cmd, message="Keypad Password updated", user=user_to_dict(user))
+
             
     
 #Android comunication
@@ -483,7 +500,7 @@ async def main(host: str, port: int) -> None:
             db_helper.create_user(db, UserCreate(
                     username="Keypad",
                     email="null",
-                    password="null",
+                    password="1111",
                     isAdmin=False,
                     hasOpenDoorPrivilege=False,
                 ),
