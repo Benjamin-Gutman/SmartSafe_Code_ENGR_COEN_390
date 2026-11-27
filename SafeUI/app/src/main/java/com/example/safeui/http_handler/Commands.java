@@ -12,24 +12,24 @@ public class Commands
         return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
     //Inventory commands
-    public static String createInventoryItem(String item_name, int quantity)
+    public static String createInventoryItem(String item_name, int quantity, String item_barcode, int user_id)
     {
-        return "create --name " + quote(item_name) + " --quantity " + quantity;
+        return "create --name " + quote(item_name) + " --quantity " + quantity + " --barcode " + item_barcode + " --user_id " + user_id;
     }
 
-    public static String editInventoryItem(int item_id, String item_name, int quantity)
+    public static String editInventoryItem(int item_id, String item_name, int quantity, String item_barcode, int user_id)
     {
-        return "update " + item_id + " --name " + quote(item_name) + " --quantity " + quantity;
+        return "update " + item_id + " --name " + quote(item_name) + " --quantity " + quantity + " --barcode " + item_barcode + " --user_id " + user_id;
     }
 
-    public static String incrementInventoryItem(int item_id, int inc_count)
+    public static String incrementInventoryItem(int item_id, int inc_count, int user_id)
     {
-        return "add " + item_id + " " + inc_count;
+        return "add " + item_id + " " + inc_count+ " "  + user_id;
     }
 
-    public static String decrementInventoryItem(int item_id, int dec_count)
+    public static String decrementInventoryItem(int item_id, int dec_count, int user_id)
     {
-        return "remove " + item_id + " " + dec_count;
+        return "remove " + item_id + " " + dec_count + " " + user_id;
     }
 
     public static String getByID(int item_id)
@@ -37,9 +37,14 @@ public class Commands
         return "get " + item_id;
     }
 
-    public static String deleteInventoryItem(int item_id)
+    public static String getItemByBarcode(String item_barcode)
     {
-        return "delete " + item_id;
+        return "getItemByBarcode " + item_barcode;
+    }
+
+    public static String deleteInventoryItem(int item_id, int user_id)
+    {
+        return "delete " + item_id + "" + user_id;
     }
 
     public static String listInventory()
@@ -62,7 +67,7 @@ public class Commands
    {
       // will by default give no admin nor door privilege
        //CHANGE HERE TO TRUE FOR TESTING IF YOU WANT
-        return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin true --hasOpenDoorPrivilege true" ;
+        return "createUser --name " + username + " --email " + email + " --password " + password + " --isAdmin false --hasOpenDoorPrivilege false" ;
        
    }
 
@@ -101,7 +106,7 @@ public class Commands
         return "deleteUser --user_id " +user_id;
     }
 
-    //Not exactly sure how the return process will work for this to verify login. 
+    
    public static String verifyUser( String username, String password)
    {
        return "verifyUser --username " + username + " --password " + password;

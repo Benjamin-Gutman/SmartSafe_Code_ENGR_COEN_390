@@ -39,12 +39,12 @@ def main():
         
         if event == "scan":
 
-            log.info("scan: %s", [(item.item_name, item.quantity) for item in details["inventory"]])
+            log.info("scan: %s", [(item.item_barcode, item.quantity) for item in details["inventory"]])
             client.send_event(event, **details)
             return
 
         log.info("event: %s %s", event, details)
-        client.send_event(event, status=safe.status())
+        client.send_event(event, status=safe.status(), **details)
 
         if event == "locked" and camera:
             camera.scan(on_scan)

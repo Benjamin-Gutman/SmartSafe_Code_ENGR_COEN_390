@@ -35,7 +35,7 @@ class Camera:
             frame = self._lib.get_frame(self._camera)
             inventory = self._lib.get_barcodes(self._lib.process_frame(frame))
 
-            inventory = [item for item in inventory if item.item_name]
+            inventory = [item for item in inventory if item.item_barcode]
         
         except Exception:
             log.exception("scan failed")    

@@ -1,7 +1,8 @@
 from pydantic import BaseModel, ConfigDict
 
 class Inventory(BaseModel):
-    item_name: str
+    item_barcode: str
+    item_name: str | None = None
     quantity: int
 
 
