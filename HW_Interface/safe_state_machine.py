@@ -28,7 +28,6 @@ class Safe:
         self._lockout_timer = None
 
         self._set_state(LOCKED if pins.door_is_closed() else OPEN)
-        pins.set(config.LED_STRIP, True if pins.door_is_closed() else False)
 
 # -- Public Functions -- #
 
