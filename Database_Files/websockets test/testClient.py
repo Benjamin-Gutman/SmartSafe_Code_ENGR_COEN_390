@@ -4,7 +4,7 @@ from websockets.exceptions import ConnectionClosed
 from websockets.sync.client import connect
  
  
-def run_client(url: str = "ws://100.93.188.101:8765") -> None:
+def run_client(url: str = "ws://localhost:8765") -> None:
     # Establish a persistent connection to the server
     with connect(url) as websocket:
         print(f"Connected to {url}. Type a command ('help' for usage, 'quit' to exit).")
@@ -34,9 +34,6 @@ def run_client(url: str = "ws://100.93.188.101:8765") -> None:
             except (TypeError, ValueError):
                 pass
             print(response.replace("\n", "\n"))
- 
- 
-
 try:
     run_client()
 except OSError as exc:

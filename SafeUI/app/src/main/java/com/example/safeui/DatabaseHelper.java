@@ -16,7 +16,7 @@ import java.util.Locale;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "SafeInventory.db";
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 10;
 
     public static final String INVENTORY_HISTORY_CACHE = "inventory_history_cache";
 
@@ -42,9 +42,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(
                 "CREATE TABLE inventory (" +
                         "item_id INTEGER PRIMARY KEY, " +
-                        "item_name TEXT NOT NULL COLLATE NOCASE UNIQUE, " +
+                        "item_name TEXT NOT NULL COLLATE NOCASE, " +
                         "description TEXT NOT NULL DEFAULT '', " +
-                        "quantity INTEGER NOT NULL DEFAULT 0 CHECK(quantity >= 0))"
+                        "quantity INTEGER NOT NULL DEFAULT 0 CHECK(quantity >= 0) ," +
+                        "item_barcode TEXT NOT NULL DEFAULT '')"
         );
 
         db.execSQL(
@@ -55,6 +56,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         "username TEXT NOT NULL, " +
                         "action TEXT NOT NULL, " +
                         "quantity_change INTEGER NOT NULL, " +
+                        "item_barcode TEXT NOT NULL, " +
                         "event_time TEXT NOT NULL)"
         );
 
@@ -131,6 +133,47 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + INVENTORY_HISTORY_CACHE +
                     " ADD COLUMN username TEXT");
         }
+        if (oldVersion < 7) { //barcode related stuff update
+            db.execSQL(
+                    "ALTER TABLE inventory " +
+                            "ADD COLUMN item_barcode TEXT NOT NULL DEFAULT ''"
+            );
+        }
+        if (oldVersion < 9) {
+
+            db.execSQL(
+                    "CREATE TABLE inventory_new (" +
+                            "item_id INTEGER PRIMARY KEY, " +
+                            "item_name TEXT NOT NULL COLLATE NOCASE, " +
+                            "description TEXT NOT NULL DEFAULT '', " +
+                            "quantity INTEGER NOT NULL DEFAULT 0 CHECK(quantity >= 0), " +
+                            "item_barcode TEXT NOT NULL DEFAULT '')"
+            );
+
+            db.execSQL(
+                    "INSERT INTO inventory_new " +
+                            "(item_id, item_name, description, quantity, item_barcode) " +
+                            "SELECT item_id, item_name, description, quantity, item_barcode " +
+                            "FROM inventory"
+            );
+
+            db.execSQL("DROP TABLE inventory");
+
+            db.execSQL(
+                    "ALTER TABLE inventory_new RENAME TO inventory"
+            );
+
+        }
+        if (oldVersion < 10) {
+            db.execSQL(
+                    "ALTER TABLE " + INVENTORY_HISTORY_CACHE +
+                            " ADD COLUMN item_barcode TEXT"
+            );
+        }
+
+
+
+
     }
 
 
@@ -320,7 +363,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return db.query(
                 "inventory",
-                new String[]{"item_id", "item_name", "description", "quantity"},
+                new String[]{"item_id", "item_name", "description", "quantity", "item_barcode"},
                 null, null, null, null,
                 "item_name COLLATE NOCASE ASC"
         );

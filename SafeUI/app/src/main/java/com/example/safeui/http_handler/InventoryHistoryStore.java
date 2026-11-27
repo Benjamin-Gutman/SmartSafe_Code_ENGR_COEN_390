@@ -19,6 +19,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
         public Integer item_id;
         public String item_name;
         public String username;
+        public int user_id;
         public String action;
         public int quantity_change;
         public String event_time;
@@ -75,13 +76,13 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                 ContentValues values = new ContentValues();
                 values.put("item_id", item.item_id);
                 values.put("item_name", item.item_name);
-                values.put("username", item.username);
                 values.put("quantity", item.quantity);
                 values.put("action", item.action);
                 values.put("timestamp", item.timestamp);
                 values.put("timestamp_micros", item.getTimestampMicros());
                 values.put("source_order", order++);
                 values.put("quantity_change", item.quantity_change);
+                values.put("item_barcode", item.item_barcode);
 
                 db.insertOrThrow(TABLE, null, values);
             }
@@ -152,7 +153,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                         "action",
                         "timestamp",
                         "quantity_change",
-                        "username"
+                        "item_barcode",
                 },
                 selection,
                 arguments.toArray(new String[0]),
@@ -173,8 +174,7 @@ public class InventoryHistoryStore implements DataSync.HistoryLocalStore
                 item.quantity_change = cursor.isNull(5)
                         ? null
                         : cursor.getInt(5);
-                item.username = cursor.isNull(6) ? null : cursor.getString(6);
-
+                item.item_barcode = cursor.getString(6);
                 items.add(item);
             }
         }

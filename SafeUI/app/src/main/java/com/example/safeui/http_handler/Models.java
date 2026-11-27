@@ -30,6 +30,7 @@ public class Models
         public int item_id;
         public String item_name;
         public int quantity;
+        public String item_barcode;
     }
 
     public static class User
@@ -56,6 +57,7 @@ public class Models
         public Integer quantity; // Stock remaining after the event, NOT the amount added/removed.
         public String action;
         public String timestamp;
+        public String item_barcode;
 
         // Optional: the current Pi response has no actor. Never substitute the
         // person viewing the screen for the person who performed an old event.
@@ -221,6 +223,9 @@ public class Models
                 return null;
             }
             return GSON.fromJson(user, User.class);
+
+
+
         }
 
         public List<User> asUsers()
@@ -258,6 +263,7 @@ public class Models
                 item.action = historyText(object, "action");
                 item.timestamp = historyText(object, "timestamp");
                 item.username = optionalHistoryText(object, "username");
+                item.item_barcode = optionalHistoryText(object, "item_barcode");
                 items.add(item);
             }
             return prepareHistory(items, null);

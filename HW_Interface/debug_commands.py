@@ -1,4 +1,5 @@
 from .loop import Loop
+from . import config
 import sys
 
 DEBUG = True;
@@ -14,7 +15,7 @@ def handle_terminal_command(loop, safe, camera, on_scan):
     
     if command == "unlock":
 
-        safe.unlock("debug")
+        safe.unlock(config.DEBUG_USER_ID)
 
     elif command == "lock":
 

@@ -64,6 +64,8 @@ public class InventoryStore implements DataSync.LocalStore
         ContentValues values = new ContentValues();
         values.put("item_name", item.item_name);
         values.put("quantity", item.quantity);
+        //may or may not be null
+        values.put("item_barcode", item.item_barcode == null ? "" : item.item_barcode);
 
         // Update the item if it already exists.
         int rows = db.update(
