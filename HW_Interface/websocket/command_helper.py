@@ -19,9 +19,9 @@ def build_command(event, status=None, details=None):
 
 
     if event == "keypad":
-           password = details.get("password") or ""
-           log.info(f"validatePin -pin {password}")
-           return f"validatePin -pin {password}"
+           password = details.get("password") or "Z"
+
+           return f"validatePin -pin {password}" 
 
     if event in ("door_opened", "door_closed", "locked", "unlocked", "alarm"):
 
