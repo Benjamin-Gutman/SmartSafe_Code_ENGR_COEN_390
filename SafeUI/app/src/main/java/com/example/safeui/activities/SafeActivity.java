@@ -152,6 +152,10 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
             historyHandler.removeCallbacks(refreshHistoryTask);
             historyHandler.postDelayed(refreshHistoryTask, 1000);
         }
+        else if ("setDoorPin".equals(reply.command)) {
+            Toast.makeText(this, "New Pin Has Succesfully Been Set", Toast.LENGTH_LONG).show();
+        }
+
     }
 
     @Override
@@ -250,7 +254,7 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
 
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         new AlertDialog.Builder(this)
-                .setTitle("Server Error")
+                .setTitle("Error : ")
                 .setMessage(message)
                 .setPositiveButton("OK", null)
                 .show();
@@ -278,7 +282,7 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
                 .setPositiveButton("Set", null)
                 .create();
 
-        //When add is clicked on above, this portion adds the item to the db
+        //When set is clicked, sets new pin number in server.
         dialog.setOnShowListener(ignored ->
                         dialog.getButton(AlertDialog.BUTTON_POSITIVE)
                                 .setOnClickListener(v -> {
