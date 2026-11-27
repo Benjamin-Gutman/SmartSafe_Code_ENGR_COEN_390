@@ -50,7 +50,7 @@ class Server:
             case "status":
                 self._reply(client, build_reply(self.safe.status()))
             case "unlock":
-                self.safe.unlock(args[1]) 
+                self.safe.unlock(args[0] if args else 0) 
             case "lock":
                 self.safe.lock()
             case _:
