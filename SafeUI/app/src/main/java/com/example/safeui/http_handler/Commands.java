@@ -157,4 +157,6 @@ public class Commands
     public static String getStatus() {
         return "getStatus";
     }
+
+    public static String setDoorPin(int pin) {return "setDoorPin --pin " + pin ;}
 }

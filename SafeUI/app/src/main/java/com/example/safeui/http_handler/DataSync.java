@@ -211,6 +211,8 @@ public class DataSync
         run(Commands.getStatus());
     }
 
+    public void setDoorPin(int pin) {run(Commands.setDoorPin(pin));}
+
     // ---- Internals ----
 
     private void run(String commandLine)

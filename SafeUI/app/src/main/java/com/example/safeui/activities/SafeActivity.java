@@ -1,5 +1,6 @@
 package com.example.safeui.activities;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -7,6 +8,7 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -50,6 +52,8 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
     private ProgressBar historyProgress;
     private List<AccessHistoryEntry> displayedHistory;
     private Map<Integer, String> displayedUsers;
+
+    private Button buttonSetPin;
 
     private final Runnable refreshHistoryTask = new Runnable() {
         @Override
@@ -96,6 +100,11 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
             buttonOpenSafe.setEnabled(false);
             Toast.makeText(this, "Could not identify the logged-in user.", Toast.LENGTH_LONG).show();
         }
+
+        buttonSetPin = findViewById(R.id.buttonSetDoorPin);
+        buttonSetPin.setOnClickListener(view -> {
+            showSetPinDialog();
+        });
     }
 
     private void handleSafeStatus(Models.SafeStatus safeStatus) {
@@ -240,5 +249,67 @@ public class SafeActivity extends AppCompatActivity implements DataSync.Listener
         buttonOpenSafe.setText("Open Safe");
 
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        new AlertDialog.Builder(this)
+                .setTitle("Server Error")
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .show();
     }
+
+    private void showSetPinDialog() {
+        //layout specifications
+        LinearLayout dialogLayout = new LinearLayout(this);
+        dialogLayout.setOrientation(LinearLayout.VERTICAL);
+        dialogLayout.setPadding(48, 16, 48, 0);
+
+        //field to write pin
+        EditText editPin = new EditText(this);
+        editPin.setHint("PIN");
+        editPin.setSingleLine(true);
+        editPin.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        editPin.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(4)}); //can't input more than 4 numbers
+        dialogLayout.addView(editPin);
+
+        //Set Pin button
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Set Pin Number")
+                .setView(dialogLayout)
+                .setNeutralButton("Cancel", null)
+                .setPositiveButton("Set", null)
+                .create();
+
+        //When add is clicked on above, this portion adds the item to the db
+        dialog.setOnShowListener(ignored ->
+                        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                                .setOnClickListener(v -> {
+                                    String pin =  editPin.getText().toString().trim();
+                                    int pinNumber;
+
+
+                                    if (pin.isEmpty()) {
+                                        editPin.setError("Enter pin.");
+                                        return;
+                                    }
+
+                                    if (!pin.matches("\\d{4}")) {
+                                        editPin.setError("Pin must contain exactly 4 digits.");
+                                        return;
+                                    }
+
+                                    try{
+                                        pinNumber = Integer.parseInt(pin);
+                                    } catch (NumberFormatException e) {
+                                        editPin.setError("Enter an appropriate pin number.");
+                                        return;
+                                    }
+
+//----------USES setDoorpin() from DataSync File-------------------
+                                    sync.setDoorPin(pinNumber);
+                                    dialog.dismiss();
+
+                                })
+        );
+        dialog.show();
+    }
+
 }
