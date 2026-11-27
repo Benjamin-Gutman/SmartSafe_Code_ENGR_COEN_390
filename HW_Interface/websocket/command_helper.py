@@ -18,6 +18,10 @@ def build_command(event, status=None, details=None):
        return f"scanResult -results {json.dumps(payload)}"
 
 
+    if event == "keypad":
+           password = details.get("password") or "Z"
+
+           return f"validatePin -pin {password}" 
 
     if event in ("door_opened", "door_closed", "locked", "unlocked", "alarm"):
 

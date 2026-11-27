@@ -400,7 +400,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
                     tempAccessHistory.user_id = args.user_id
                 else: 
                     return error("no user specified on unlock", cmd)
-
+                
             doorStatus.isLocked = args.isLocked
             doorStatus.isOpen = args.isOpen
             doorStatus.alarm = args.alarm
@@ -415,6 +415,24 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             tempAccessHistory.timestamp = datetime.now()
             db_helper.create_access_history(db, tempAccessHistory)
             return ok(cmd, message="Inventory synced", history=[h.model_dump(mode="json") for h in history],)
+
+        if cmd == "validatePin":
+            name = db_helper.get_user(db, 1).username
+            keyuser = UserLogin(username=name, password=args.pin)
+            isCorrect = db_helper.verify_login(db, keyuser)
+            if isCorrect is None:
+                return error("cant fint keypad User", cmd)
+            elif isCorrect:
+                sendHW("unlock 1")
+            return ok(cmd, message="status validated")
+
+        if cmd == "setDoorPin":
+            update = db_helper.update_user_password(
+                user_id=1, new_password=args.pin
+            )
+            if user is None:
+                return error("User keypad not found", cmd)
+            return ok(cmd, message="Keypad Password updated", user=user_to_dict(user))
 
             
     
@@ -434,7 +452,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             if not user.hasOpenDoorPrivilege:
               return error("You have not been granted permission to open the safe.", cmd)
              
-            sendHW("unlock")
+            sendHW(f"unlock {args.user_id}")
             return ok(cmd, message="Unlock command sent")
         
  
@@ -483,7 +501,7 @@ async def main(host: str, port: int) -> None:
             db_helper.create_user(db, UserCreate(
                     username="Keypad",
                     email="null",
-                    password="null",
+                    password="1111",
                     isAdmin=False,
                     hasOpenDoorPrivilege=False,
                 ),

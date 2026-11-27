@@ -2,6 +2,7 @@
 import os
  
 GPIO_CHIP = "/dev/gpiochip15" 
+I2C_BUS = 1
 
 # -- GPIO Numbers for peripheral devices (not pin numbers) -- #
 
