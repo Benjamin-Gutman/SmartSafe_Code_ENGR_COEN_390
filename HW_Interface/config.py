@@ -2,6 +2,7 @@
 import os
  
 GPIO_CHIP = "/dev/gpiochip15" 
+I2C_BUS = 1
 
 # -- GPIO Numbers for peripheral devices (not pin numbers) -- #
 
@@ -9,6 +10,7 @@ REED_SWITCH = 26 # Normally Open
 LOCK = 16
 BUZZER = 5
 RED_LED = 6 # Alarm Light
+LED_STRIP = 12
 
 # -- End GPIO Numbers -- #
 
@@ -25,9 +27,13 @@ BACKEND_HOST = "127.0.0.1"
 BACKEND_PORT = 8765
 
 
+LIGHT_SECONDS = 2
 BLINK_SECONDS = 0.5
 RELOCK_DELAY_SECONDS = 2
 UNLOCK_SECONDS = 20
 CLIENT_TIMEOUT_SECONDS = 1.0
+
+DEBUG_USER_ID = 1
+KEYPAD_USER_ID = 1
 
 # -- End Global Variables -- #

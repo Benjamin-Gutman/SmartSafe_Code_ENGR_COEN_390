@@ -7,7 +7,7 @@ import logging
 import socket
 
 from .command_helper import build_reply
-import config
+from .. import config
 
 from websockets.frames import Frame, Opcode
 from websockets.http11 import Request
@@ -50,7 +50,7 @@ class Server:
             case "status":
                 self._reply(client, build_reply(self.safe.status()))
             case "unlock":
-                self.safe.unlock("User") # Left generic for now
+                self.safe.unlock(args[0] if args else 0) 
             case "lock":
                 self.safe.lock()
             case _:

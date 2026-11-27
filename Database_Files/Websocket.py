@@ -23,7 +23,7 @@ from Schemas.Access_History import AccessHistoryCreate, AccessHistoryDelete, Acc
  
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
-tempAccessHistory : AccessHistoryCreate
+tempAccessHistory = AccessHistoryCreate(user_id=0, changes_made=[], timestamp=datetime.now())
 
 class Status(BaseModel):
     isLocked: bool = True
@@ -80,6 +80,63 @@ def session_scope():
         session.close()
 
 
+# def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistory]:
+
+#     history: list[InventoryHistory] = []
+
+#     # DatabaseHelper has no lookup by barcode, so index the existing items once.
+#     existing_by_barcode = {
+#         item.item_barcode: item for item in db_helper.get_all_inventory(db)
+#     }
+
+#     for incoming in items:
+#         existing = existing_by_barcode.get(incoming.item_barcode)
+
+#         if existing is not None:
+#             if incoming.quantity == existing.quantity:
+#                 continue
+
+#             # Remember which history rows already exist so only the new ones are returned.
+#             known_ids = {
+#                 h.history_id for h in db_helper.get_inventory_history(db, existing.item_id)
+#             }
+#             updated = db_helper.update_inventory(
+#                 db,
+#                 existing.item_id,
+#                 InventoryUpdate(
+#                     item_id=existing.item_id,
+#                     item_barcode=existing.item_barcode,
+#                     item_name=existing.item_name,
+#                     quantity=incoming.quantity,
+#                 ),
+#             )
+#             if updated is None:  # deleted by someone else mid-run
+#                 existing_by_barcode.pop(incoming.item_barcode, None)
+#                 continue
+
+#             history.extend(
+#                 h
+#                 for h in db_helper.get_inventory_history(db, updated.item_id)
+#                 if h.history_id not in known_ids
+#             )
+#         else:
+#             new_item = db_helper.create_inventory(
+#                 db,
+#                 InventoryCreate(
+#                     item_barcode=incoming.item_barcode,
+#                     item_name="",  # required by the schema, left blank on purpose
+#                     quantity=incoming.quantity,
+#                 ),
+#             )
+#             # Register it so a repeated barcode later in the list updates this
+#             # item instead of creating a duplicate.
+#             existing_by_barcode[new_item.item_barcode] = new_item
+
+#             # A brand new item has no history other than what create_inventory just wrote.
+#             history.extend(db_helper.get_inventory_history(db, new_item.item_id))
+
+#     return history
+
 def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistory]:
 
     history: list[InventoryHistory] = []
@@ -88,37 +145,43 @@ def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistory]:
     existing_by_barcode = {
         item.item_barcode: item for item in db_helper.get_all_inventory(db)
     }
+    scanned_barcodes: set[str] = set()
+
+    def set_quantity(existing, quantity: int) -> None:
+        """Set an existing item's quantity and collect the history rows the database writes."""
+        if quantity == existing.quantity:
+            return
+
+        # Remember which history rows already exist so only the new ones are returned.
+        known_ids = {
+            h.history_id for h in db_helper.get_inventory_history(db, existing.item_id)
+        }
+        updated = db_helper.update_inventory(
+            db,
+            existing.item_id,
+            InventoryUpdate(
+                item_id=existing.item_id,
+                item_barcode=existing.item_barcode,
+                item_name=existing.item_name,
+                quantity=quantity,
+            ),
+        )
+        if updated is None:  # deleted by someone else mid-run
+            existing_by_barcode.pop(existing.item_barcode, None)
+            return
+
+        history.extend(
+            h
+            for h in db_helper.get_inventory_history(db, updated.item_id)
+            if h.history_id not in known_ids
+        )
 
     for incoming in items:
+        scanned_barcodes.add(incoming.item_barcode)
         existing = existing_by_barcode.get(incoming.item_barcode)
 
         if existing is not None:
-            if incoming.quantity == existing.quantity:
-                continue
-
-            # Remember which history rows already exist so only the new ones are returned.
-            known_ids = {
-                h.history_id for h in db_helper.get_inventory_history(db, existing.item_id)
-            }
-            updated = db_helper.update_inventory(
-                db,
-                existing.item_id,
-                InventoryUpdate(
-                    item_id=existing.item_id,
-                    item_barcode=existing.item_barcode,
-                    item_name=existing.item_name,
-                    quantity=incoming.quantity,
-                ),
-            )
-            if updated is None:  # deleted by someone else mid-run
-                existing_by_barcode.pop(incoming.item_barcode, None)
-                continue
-
-            history.extend(
-                h
-                for h in db_helper.get_inventory_history(db, updated.item_id)
-                if h.history_id not in known_ids
-            )
+            set_quantity(existing, incoming.quantity)
         else:
             new_item = db_helper.create_inventory(
                 db,
@@ -134,6 +197,12 @@ def sync_inventory(db, items: list[Inventory]) -> list[InventoryHistory]:
 
             # A brand new item has no history other than what create_inventory just wrote.
             history.extend(db_helper.get_inventory_history(db, new_item.item_id))
+
+    # Anything in the inventory that wasn't scanned is set to 0.
+    # list() because set_quantity can remove entries from the dict.
+    for barcode, existing in list(existing_by_barcode.items()):
+        if barcode not in scanned_barcodes:
+            set_quantity(existing, 0)
 
     return history
 
@@ -331,7 +400,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
                     tempAccessHistory.user_id = args.user_id
                 else: 
                     return error("no user specified on unlock", cmd)
-
+                
             doorStatus.isLocked = args.isLocked
             doorStatus.isOpen = args.isOpen
             doorStatus.alarm = args.alarm
@@ -340,12 +409,30 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
         if cmd=="scanResult":
             response = json.loads(args.results)
             #items = [Inventory.model_validate(d) for d in response["inventory"]]
-            items = [Inventory.model_validate({"item_name": "", **d}) for d in response["inventory"]]
+            items = [Inventory.model_validate({"item_name": "", **d}) for d in response["list"]]
             history = sync_inventory(db, items)
             tempAccessHistory.changes_made = history
             tempAccessHistory.timestamp = datetime.now()
             db_helper.create_access_history(db, tempAccessHistory)
             return ok(cmd, message="Inventory synced", history=[h.model_dump(mode="json") for h in history],)
+
+        if cmd == "validatePin":
+            name = db_helper.get_user(db, 1).username
+            keyuser = UserLogin(username=name, password=args.pin)
+            isCorrect = db_helper.verify_login(db, keyuser)
+            if isCorrect is None:
+                return error("cant fint keypad User", cmd)
+            elif isCorrect:
+                sendHW("unlock 1")
+            return ok(cmd, message="status validated")
+
+        if cmd == "setDoorPin":
+            update = db_helper.update_user_password(
+                user_id=1, new_password=args.pin
+            )
+            if user is None:
+                return error("User keypad not found", cmd)
+            return ok(cmd, message="Keypad Password updated", user=user_to_dict(user))
 
             
     
@@ -365,7 +452,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             if not user.hasOpenDoorPrivilege:
               return error("You have not been granted permission to open the safe.", cmd)
              
-            sendHW("unlock")
+            sendHW(f"unlock {args.user_id}")
             return ok(cmd, message="Unlock command sent")
         
  
@@ -414,7 +501,7 @@ async def main(host: str, port: int) -> None:
             db_helper.create_user(db, UserCreate(
                     username="Keypad",
                     email="null",
-                    password="null",
+                    password="1111",
                     isAdmin=False,
                     hasOpenDoorPrivilege=False,
                 ),

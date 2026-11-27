@@ -3,7 +3,7 @@
 import logging 
 import time 
 
-import config
+from . import config
 
 log = logging.getLogger("hw")
 
@@ -31,8 +31,11 @@ class Safe:
     def door_opened(self):
         """ Defines logic for when door is opened """
 
+        if self.state == OPEN:
+            self.notify("door_opened")
+
+
         if self.state == ALARM:
-            
             self.notify("door_opened")
 
         if self.state == UNLOCKED:
@@ -57,8 +60,8 @@ class Safe:
 
     def unlock(self, source):
         """ Unlocks door if it is closed and sets a timer """
-
-        if self.state == OPEN:
+        
+        if self.state in (OPEN, UNLOCKED):
             return
 
         # Set state to unlock or open and clear alarm #
@@ -78,6 +81,10 @@ class Safe:
 
             self._set_state(LOCKED)
             self.notify("locked")
+            
+            self.pins.set(config.LED_STRIP, False) # Turn light on for LIGHT_SECONDS
+            self.loop.after(config.LIGHT_SECONDS, self._light_off)
+
 
         return self.state == LOCKED
 
@@ -134,6 +141,10 @@ class Safe:
 
         if self.state != ALARM:
             self.pins.set(config.BUZZER, False)
+
+    def _light_off(self):
+        """ Called by loof after time specified to turn off light """
+        self.pins.set(config.LED_STRIP, True)
 
 
     

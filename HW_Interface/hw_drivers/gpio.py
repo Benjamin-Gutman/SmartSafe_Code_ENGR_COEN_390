@@ -5,11 +5,11 @@ from datetime import timedelta
 import gpiod
 from gpiod.line import Bias, Direction, Edge, Value
 
-import config
+from .. import config
 
 
 # -- Populate with gpio values from config.py (ONLY OUTPUT VALUES) -- #
-OUTPUTS = (config.LOCK, config.RED_LED, config.BUZZER)
+OUTPUTS = (config.LOCK, config.RED_LED, config.BUZZER, config.LED_STRIP)
 
 class Pins:
 
@@ -35,7 +35,8 @@ class Pins:
 
         # Configure outputs and set to default low #
         for pin in OUTPUTS:
-            settings[pin] = gpiod.LineSettings(direction = Direction.OUTPUT, output_value = Value.INACTIVE)
+
+            settings[pin] = gpiod.LineSettings(direction = Direction.OUTPUT, output_value = Value.ACTIVE if pin ==config.LED_STRIP else Value.INACTIVE) 
 
         # Creates LineRequest Objects Tied to Chip #
         self._lines = gpiod.request_lines(config.GPIO_CHIP, consumer="safe-hw", config = settings)
