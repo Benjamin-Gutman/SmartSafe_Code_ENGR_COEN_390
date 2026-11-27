@@ -165,12 +165,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             );
 
         }
-        if (oldVersion < 10) {
-            db.execSQL(
-                    "ALTER TABLE " + INVENTORY_HISTORY_CACHE +
-                            " ADD COLUMN item_barcode TEXT"
-            );
-        }
         if (oldVersion < 11) {
             db.execSQL(
                     "ALTER TABLE " + INVENTORY_HISTORY_CACHE +

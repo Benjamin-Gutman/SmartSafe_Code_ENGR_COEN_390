@@ -175,7 +175,7 @@ def build_command_parser() -> SocketArgumentParser:
     p = sub.add_parser("unlockDoor", help= "unlock the safe ", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--user_id", type=int, required=True)
 
-    p = sub.add_parser("setDoorPin", help= "give safe status", formatter_class=argparse.RawTextHelpFormatter)
+    p = sub.add_parser("setDoorPin", help= "set door pin", formatter_class=argparse.RawTextHelpFormatter)
     p.add_argument("--pin", type=int, required=True)
 
     sub.add_parser("help", help="show available commands", formatter_class=argparse.RawTextHelpFormatter)
