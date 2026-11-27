@@ -321,7 +321,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             return ok(cmd, message="User updated", user=user_to_dict(user))
 
         if cmd == "updatePassword" :
-            update = db_helper.update_user_password(
+            user = db_helper.update_user_password(
                 db, user_id=args.user_id, new_password= args.newpassword
             )
             
