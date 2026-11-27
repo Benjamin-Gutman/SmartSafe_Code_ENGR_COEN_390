@@ -322,7 +322,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
 
         if cmd == "updatePassword" :
             update = db_helper.update_user_password(
-                user_id=args.user_id, new_password= args.newpassword
+                db, user_id=args.user_id, new_password= args.newpassword
             )
             
             if user is None:
@@ -428,7 +428,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
 
         if cmd == "setDoorPin":
             update = db_helper.update_user_password(
-                user_id=1, new_password=args.pin
+                db, user_id=1, new_password=args.pin
             )
             if user is None:
                 return error("User keypad not found", cmd)
