@@ -423,7 +423,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             if isCorrect is None:
                 return error("cant fint keypad User", cmd)
             elif isCorrect:
-                sendHW("unlock")
+                sendHW("unlock 1")
             return ok(cmd, message="status validated")
 
         if cmd == "setDoorPin":
@@ -452,7 +452,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             if not user.hasOpenDoorPrivilege:
               return error("You have not been granted permission to open the safe.", cmd)
              
-            sendHW("unlock")
+            sendHW(f"unlock {args.user_id}")
             return ok(cmd, message="Unlock command sent")
         
  
