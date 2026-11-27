@@ -24,6 +24,9 @@ class Safe:
         self._blink_timer = None
         self._blink_on = False
 
+        self._lockout = False
+        self._lockout_timer = None
+
         self._set_state(LOCKED if pins.door_is_closed() else OPEN)
 
 # -- Public Functions -- #
@@ -33,7 +36,6 @@ class Safe:
 
         if self.state == OPEN:
             self.notify("door_opened")
-
 
         if self.state == ALARM:
             self.notify("door_opened")
@@ -48,6 +50,8 @@ class Safe:
             self._set_state(ALARM)
             self.notify("alarm", reason="Door opened while locked")
 
+        self.pins.set(config.LED_STRIP, False)
+
     def door_closed(self):
         """ Defines logic for when door is closed """
 
@@ -56,10 +60,15 @@ class Safe:
         if self.state == OPEN:
             self.loop.cancel(self._relock_timer)
             self.loop.after(config.RELOCK_DELAY_SECONDS, self._relock_after_close)
+        
+        self.pins.set(config.LED_STRIP, True)
 
 
     def unlock(self, source):
         """ Unlocks door if it is closed and sets a timer """
+
+        if self._lockout:
+            return
         
         if self.state in (OPEN, UNLOCKED):
             return
@@ -112,7 +121,14 @@ class Safe:
 
         if state == ALARM:
             self._blink()
+
+        if state == LOCKED:
+            self._lockout = True
+            self.loop.cancel(self._lockout_timer)
+            self._lockout_timer = self.loop.after(config.LOCKOUT_SECONDS, self._end_lockout)
+
         log.info("state: %s", state)
+
 
     def _relock_after_close(self):
         """ Checks if door was closed and locks automatically """
@@ -146,6 +162,8 @@ class Safe:
         """ Called by loof after time specified to turn off light """
         self.pins.set(config.LED_STRIP, True)
 
+    def _end_lockout(self):
+        self._lockout = False
 
     
 
