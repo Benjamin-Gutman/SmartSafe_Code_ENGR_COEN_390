@@ -420,7 +420,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             name = db_helper.get_user(db, 1).username
             keyuser = UserLogin(username=name, password=args.pin)
             isCorrect = db_helper.verify_login(db, keyuser)
-            if isCorrect == None:
+            if isCorrect is None:
                 return error("cant fint keypad User", cmd)
             elif isCorrect:
                 sendHW("unlock")
