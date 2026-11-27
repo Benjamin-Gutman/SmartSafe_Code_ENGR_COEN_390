@@ -400,7 +400,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
                     tempAccessHistory.user_id = args.user_id
                 else: 
                     return error("no user specified on unlock", cmd)
-
+                
             doorStatus.isLocked = args.isLocked
             doorStatus.isOpen = args.isOpen
             doorStatus.alarm = args.alarm
