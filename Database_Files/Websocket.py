@@ -417,7 +417,8 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             return ok(cmd, message="Inventory synced", history=[h.model_dump(mode="json") for h in history],)
 
         if cmd == "validatePin":
-            keyuser = UserLogin(username="Keypad", password=args.pin)
+            name = db_helper.get_user(db, 1).username
+            keyuser = UserLogin(username=name, password=args.pin)
             isCorrect = db_helper.verify_login(db, keyuser)
             if isCorrect == None:
                 return error("cant fint keypad User", cmd)
