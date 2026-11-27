@@ -427,7 +427,7 @@ def execute(args: argparse.Namespace, parser: SocketArgumentParser) -> dict:
             return ok(cmd, message="status validated")
 
         if cmd == "setDoorPin":
-            update = db_helper.update_user_password(
+            user = db_helper.update_user_password(
                 db, user_id=1, new_password=args.pin
             )
             if user is None:
