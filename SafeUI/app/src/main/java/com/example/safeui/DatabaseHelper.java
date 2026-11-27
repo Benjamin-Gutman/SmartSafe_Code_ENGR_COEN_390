@@ -16,7 +16,7 @@ import java.util.Locale;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "SafeInventory.db";
-    private static final int DATABASE_VERSION = 10;
+    private static final int DATABASE_VERSION = 11;
 
     public static final String INVENTORY_HISTORY_CACHE = "inventory_history_cache";
 
@@ -76,7 +76,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "timestamp TEXT NOT NULL, " +
                 "timestamp_micros INTEGER NOT NULL, " +
                 "source_order INTEGER NOT NULL, " +
-                "quantity_change INTEGER)");
+                "quantity_change INTEGER " +
+                "item_barcode TEXT)");
         db.execSQL("CREATE INDEX IF NOT EXISTS inventory_history_cache_item_time ON " +
                 INVENTORY_HISTORY_CACHE + " (item_id, timestamp_micros)");
     }
@@ -165,6 +166,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         }
         if (oldVersion < 10) {
+            db.execSQL(
+                    "ALTER TABLE " + INVENTORY_HISTORY_CACHE +
+                            " ADD COLUMN item_barcode TEXT"
+            );
+        }
+        if (oldVersion < 11) {
             db.execSQL(
                     "ALTER TABLE " + INVENTORY_HISTORY_CACHE +
                             " ADD COLUMN item_barcode TEXT"
