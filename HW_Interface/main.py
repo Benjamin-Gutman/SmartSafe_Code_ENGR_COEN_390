@@ -94,6 +94,7 @@ def main():
     watchdog_service.tell_systemd("READY=1")
     watchdog_service.start_watchdog(loop)
 
+    pins.set(config.LED_STRIP, True if pins.door_is_closed() else False)
  
     log.info("running; press Ctrl+C to stop")
     try:
