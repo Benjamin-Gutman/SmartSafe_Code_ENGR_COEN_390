@@ -98,7 +98,8 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
             }
         });
         buttonAccount.setOnClickListener(v -> showAccountDialog());
-        sync.getUserByUsername(username);
+       // loadUserInfo(username);
+        //sync.getUserByUsername(username);
     }
 
     //account button + sign out dialog
@@ -144,6 +145,7 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
         if (safeAlertBanner != null) {
             safeAlertBanner.onResume();
         }
+        loadUserInfo(username);
     }
 
     @Override
@@ -158,6 +160,23 @@ public class MainActivity extends AppCompatActivity implements DataSync.Listener
     @Override 
     public void onError(String message){
         Toast.makeText(this,   "ERROR: "+message, Toast.LENGTH_SHORT).show();
+        new AlertDialog.Builder(this)
+                .setTitle("Server Error")
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    public void loadUserInfo(String username){
+        //reset everything every time
+        isAdminFlag = false;
+        hasOpenDoorPrivilege = false;
+        userInfoLoaded = false;
+        currentUserId = -1;
+
+        sync.getUserByUsername(username);
+
+
     }
 
 }
